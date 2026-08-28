@@ -1,0 +1,33 @@
+Reduced rigid-cube Brownian-rotation model
+Each temperature is initialized independently from a uniform 1/64 pair-state distribution.
+Face is facet constrained; Brownian alignment is applied only to the blocked tip-forming fraction.
+Face Emag = canonical face Edd + Neel relaxation deficit + suppressed-Brownian-rotation penalty.
+The Neel deficit is not added twice; the transition barrier is not treated as occupied-state energy.
+No ligand/contact rotational barrier is included.
+SAXS integration = 150 s
+effective midpoint window = 20 s
+Ms(300 K sample value) = 2.850000000e+05 A/m
+Ms basis = present-particle magnetometry at 300 K: 55 emu/g = 55 A m2/kg; converted with rho(Fe3O4)=5.18e3 kg/m3
+Neel attempt time tau0(300 K) = 9.800000000e-10 s
+attempt-time source = Moreno et al., Phys. Rev. B 112, 024429 (2025), DOI 10.1103/vmwp-q427
+The 1/3 pathway factor partitions the literature total escape frequency among the three adjacent <111> wells.
+Hamaker constant = 2.000000000e-20 J
+Hamaker source/range = Faure et al., Langmuir 27, 8659-8664 (2011), DOI 10.1021/la201387d; representative value within 9-29 zJ for nonpolar solvents
+diameter coefficient of variation = 0.000% (temporary monodisperse baseline; replace with sample TEM result)
+viscosity = temperature-dependent saturated-liquid n-hexane reference correlation
+viscosity source = Michailidou et al., J. Phys. Chem. Ref. Data 42, 033104 (2013), DOI 10.1063/1.4818980
+hexane viscosity at 250 K = 0.513015 mPa s
+hexane viscosity at 300 K = 0.291858 mPa s
+hydrodynamic diameter = 19.000 nm
+face surface gap = 3.000 nm
+tip surface gap = 3.000 nm
+face center distance = 19.000000000 nm
+tip center distance = 28.516660498 nm
+face vdW = -4.883437029e-21 J/pair
+tip vdW = -2.453204188e-22 J/pair
+face minimum Edd = -2.649034105e-20 J/pair
+face same-[111] Edd = 0.000000000e+00 J/pair
+tip aligned Edd = -1.175286144e-20 J/pair
+magnetic-energy crossing = 253.64 K
+pair-total crossing including both vdW terms = 247.81 K
+This reduced correction is a mechanism test, not a quantitative face-to-tip rate calculation.

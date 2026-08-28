@@ -1,0 +1,24 @@
+Observation-window sweep for the reduced V10.18 face/tip model
+observation window range = 0.1-100 s
+number of sampled windows = 68
+temperature grid = 200-300 K in 0.5 K increments
+diameter coefficient of variation = 0% (temporary monodisperse baseline)
+viscosity = temperature-dependent saturated-liquid n-hexane
+viscosity source = Michailidou et al., J. Phys. Chem. Ref. Data 42, 033104 (2013), DOI 10.1063/1.4818980
+hexane viscosity at 250 K = 0.513015 mPa s
+hexane viscosity at 300 K = 0.291858 mPa s
+Each temperature starts independently from a uniform 64-state prior.
+Exposure-mean Neel energies are evaluated by exact modal integration of the master equation.
+
+window_s,magnetic_crossing_K,pair_total_crossing_K
+0.1,nan,nan
+0.2,nan,nan
+0.5,nan,293.675468
+1,290.067595,283.720955
+2,280.503205,274.410695
+5,268.785364,262.989138
+10,260.549918,254.951658
+20,252.802294,247.382765
+50,243.237918,238.029278
+75,239.231607,234.107868
+100,236.467678,231.401535

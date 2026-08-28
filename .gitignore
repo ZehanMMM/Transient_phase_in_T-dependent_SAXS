@@ -1,0 +1,77 @@
+# Local agent and editor state
+/.claude/
+/.codex/
+/.pytest_cache/
+**/.pytest_cache/
+**/.ipynb_checkpoints/
+
+# Temporary and duplicated workspaces
+/tmp/
+/workspace/
+/github/
+/github_exports/
+/archive/
+/results/
+
+# Keep only V10 in this repository
+/versions/*
+!/versions/V10_multiphysics_nanocube/
+/versions/V10_multiphysics_nanocube/*
+!/versions/V10_multiphysics_nanocube/code/
+!/versions/V10_multiphysics_nanocube/outputs/
+
+/versions/V10_multiphysics_nanocube/code/*
+!/versions/V10_multiphysics_nanocube/code/geometry_model.py
+!/versions/V10_multiphysics_nanocube/code/protocol.py
+!/versions/V10_multiphysics_nanocube/code/pair_energy_model.py
+!/versions/V10_multiphysics_nanocube/code/plot_energy_over_kbt.py
+!/versions/V10_multiphysics_nanocube/code/observation_window_sweep.py
+
+/versions/V10_multiphysics_nanocube/outputs/*
+!/versions/V10_multiphysics_nanocube/outputs/JACS_SI_temperature_dependent_pair_energy_model_20s_concise.docx
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_E_over_kBT.csv
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_E_over_kBT.pdf
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_E_over_kBT.png
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_pair_energies.csv
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_pair_energies.pdf
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_pair_energies.png
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_parameter_audit.md
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_summary.txt
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_timescales.pdf
+!/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_timescales.png
+!/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings.csv
+!/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings.pdf
+!/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings.png
+!/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings_selected.csv
+!/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings_summary.txt
+
+# Python artifacts
+**/__pycache__/
+*.py[cod]
+*.pyo
+.coverage
+htmlcov/
+
+# Local environments
+.venv/
+venv/
+env/
+
+# Logs and operating-system files
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Locally stored literature files
+/references/**/*.pdf
+/references/**/*.doc
+/references/**/*.docx
+
+# Derived QA and archival duplicates
+**/_qa*/
+**/qa_*/
+**/_docx_*/
+**/root_exports/
+**/results_archive/
+**/_v*_work/
