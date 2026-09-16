@@ -50,6 +50,27 @@ def test_volume_weights_sum_and_nodes_inside(scheme, n):
     assert shape.contains(nodes).all()
 
 
+def test_midpoint_n3_reproduces_grid27():
+    """The midpoint scheme must be a faithful refinement of the SI rule."""
+    shape = V.Superellipsoid(EDGE)
+    mid_nodes, mid_weights = shape.volume_nodes("midpoint", 3, "literature")
+    si_nodes, si_weights = shape.volume_nodes("grid27", 3, "literature")
+    assert len(mid_nodes) == len(si_nodes) == 27
+    order_mid = np.lexsort(mid_nodes.T)
+    order_si = np.lexsort(si_nodes.T)
+    assert np.allclose(mid_nodes[order_mid], si_nodes[order_si], atol=1e-12)
+    assert np.allclose(mid_weights[order_mid], si_weights[order_si])
+
+
+@pytest.mark.parametrize("n", [4, 6, 12])
+def test_midpoint_drops_outside_cells_and_renormalises(n):
+    shape = V.Superellipsoid(EDGE)
+    nodes, weights = shape.volume_nodes("midpoint", n, "exact")
+    assert shape.contains(nodes).all()
+    assert len(nodes) <= n ** 3
+    assert weights.sum() == pytest.approx(shape.volume_exact_nm3, rel=1e-12)
+
+
 def test_surface_element_count_is_386_for_n8():
     nodes, areas = V.Superellipsoid(EDGE).surface_nodes("lattice", 8)
     assert len(nodes) == 386 == 6 * 8 ** 2 + 2

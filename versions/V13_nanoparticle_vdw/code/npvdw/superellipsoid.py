@@ -128,6 +128,8 @@ class Superellipsoid:
         """
         if scheme == "grid27":
             return self._nodes_grid27(volume_convention)
+        if scheme == "midpoint":
+            return self._nodes_midpoint(n, volume_convention)
         if scheme == "cartesian":
             return self._nodes_cartesian(n, volume_convention)
         if scheme == "radial":
@@ -141,6 +143,31 @@ class Superellipsoid:
         centres = grid.reshape(-1, 3)
         weights = np.full(27, self.volume(volume_convention) / 27.0)
         return centres, weights
+
+    def _nodes_midpoint(self, n, volume_convention):
+        """Equal-weight midpoint lattice, the faithful refinement of grid27.
+
+        n = 3 reproduces the SI's node positions exactly: the lattice centres
+        land on multiples of a/3 and all 27 fall inside the body, so the rule
+        is identical to 'grid27'.  For n > 3 the corner cells of the bounding
+        box fall OUTSIDE the superellipsoid; those are dropped and the
+        surviving weights are renormalised to the total volume, so a partial
+        boundary cell is never counted as a full one.
+
+        This scheme exists to answer one question: does refining the SI's own
+        rule converge?  It does, to the same limit as the Gauss-Legendre
+        rules, but only at the first-order rate that a staircase boundary
+        allows.  Use 'cartesian' for production work.
+        """
+        n = int(n)
+        step = self.edge_nm / n
+        line = (np.arange(n) + 0.5) * step - self.half_nm
+        grid = np.stack(
+            np.meshgrid(line, line, line, indexing="ij"), axis=-1
+        ).reshape(-1, 3)
+        centres = grid[self.contains(grid)]
+        weights = np.ones(len(centres))
+        return centres, self._rescale(weights, volume_convention)
 
     def _nodes_cartesian(self, n, volume_convention):
         h = self.half_nm
