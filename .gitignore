@@ -45,6 +45,9 @@
 !/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings_selected.csv
 !/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings_summary.txt
 
+# V13 standalone nanoparticle van der Waals module
+!/versions/V13_nanoparticle_vdw/
+
 # Python artifacts
 **/__pycache__/
 *.py[cod]

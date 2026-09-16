@@ -1,0 +1,13 @@
+volume_discretisation,surface_area_mode,r2_mode,interior_well_gap_nm,well_depth_kcalmol,U_attr_at_2.99,U_rep_at_2.99,U_pair_at_2.99,rms_vs_figure_as_pair,rms_vs_figure_as_per_particle
+27 elements (SI),cube_param,nearest_element,none,-235.7537(edge),-43.8453,19.9584,-23.8869,12.463,5.974
+27 elements (SI),cube_param,exact_surface,none,-232.4926(edge),-43.8453,20.2324,-23.6129,12.310,5.898
+27 elements (SI),cube_param,global_min,16.400,-0.0994,-43.8453,103.6274,59.7821,33.057,16.806
+27 elements (SI),equal_solid_angle,nearest_element,none,-240.8134(edge),-43.8453,19.9221,-23.9232,12.576,6.032
+27 elements (SI),equal_solid_angle,exact_surface,none,-236.2683(edge),-43.8453,20.2765,-23.5688,12.374,5.932
+27 elements (SI),equal_solid_angle,global_min,16.400,-0.0994,-43.8453,103.6279,59.7826,33.058,16.806
+continuum volume,cube_param,nearest_element,none,-31348.6276(edge),-79.0954,19.9584,-59.1369,52.571,26.109
+continuum volume,cube_param,exact_surface,none,-31345.3665(edge),-79.0954,20.2324,-58.8629,52.423,26.036
+continuum volume,cube_param,global_min,none,-30698.9269(edge),-79.0954,103.6274,24.5321,15.259,7.835
+continuum volume,equal_solid_angle,nearest_element,none,-31353.6874(edge),-79.0954,19.9221,-59.1733,52.696,26.172
+continuum volume,equal_solid_angle,exact_surface,none,-31349.1423(edge),-79.0954,20.2765,-58.8188,52.501,26.075
+continuum volume,equal_solid_angle,global_min,none,-30698.9235(edge),-79.0954,103.6279,24.5325,15.259,7.835

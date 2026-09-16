@@ -1,0 +1,7 @@
+note,volume_rule,surface_rule,r2_mode,well_gap_nm,well_depth_U_pair_kcalmol,well_depth_per_particle_kcalmol,well_depth_U_pair_kBT_300K,gap_shift_vs_previous_nm,wall_seconds
+SI discretisation,grid273,lattice8,nearest_element,2.9921,-2.34639,-1.17319,-3.93583,,0.5
+coarse continuum,cartesian6,facegl8,exact_surface,none,-4244.90332,-2122.45166,-7120.39423,,0.3
+continuum,cartesian8,facegl12,exact_surface,none,-7748.18194,-3874.09097,-12996.78833,,1.0
+continuum,cartesian12,facegl16,exact_surface,none,-10116.78563,-5058.39282,-16969.88049,,7.0
+continuum,cartesian16,facegl24,exact_surface,none,-8068.65746,-4034.32873,-13534.35347,,31.6
+continuum,cartesian16,facegl32,exact_surface,none,-8068.65746,-4034.32873,-13534.35347,,32.3

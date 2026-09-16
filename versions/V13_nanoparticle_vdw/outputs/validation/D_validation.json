@@ -1,0 +1,277 @@
+{
+  "results": [
+    {
+      "check": "kcal/mol -> J round trip",
+      "measured": 0.0,
+      "tolerance": 1e-14,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "Singh A = 3 kcal/mol equals 2.08431e-20 J",
+      "measured": 1.7410249051293622e-07,
+      "tolerance": 1e-06,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "A = 2.0e-20 J equals 2.878652 kcal/mol",
+      "measured": 1.2885784807723538e-07,
+      "tolerance": 1e-06,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "1 kcal/mol = 1.67739845 kBT at 300 K",
+      "measured": 2.983259126117173e-09,
+      "tolerance": 1e-08,
+      "unit": "relative",
+      "pass": true,
+      "detail": "SI depth -2.33 kcal/mol = -3.9083 kBT per pair at 300 K"
+    },
+    {
+      "check": "K_W within 1 % of the SI's quoted 2.5e5 nm^6 kcal/mol",
+      "measured": 0.003161340469441276,
+      "tolerance": 0.01,
+      "unit": "relative",
+      "pass": true,
+      "detail": "K_W = 2.507903e+05 nm^6 kcal/mol"
+    },
+    {
+      "check": "J channel equals kcal/mol channel",
+      "measured": 0.0,
+      "tolerance": 1e-14,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "kBT channel equals J channel",
+      "measured": 0.0,
+      "tolerance": 1e-14,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "U_pair(i,j) = U_pair(j,i), random orientations",
+      "measured": 2.9997644388171245e-16,
+      "tolerance": 1e-13,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "U_rep(i,j) = U_rep(j,i) after symmetrisation",
+      "measured": 0.0,
+      "tolerance": 1e-13,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "symmetrisation introduces no factor of two in a symmetric configuration",
+      "measured": 0.0,
+      "tolerance": 1e-13,
+      "unit": "relative",
+      "pass": true,
+      "detail": "one-sided 19.838421, averaged 19.838421 kcal/mol"
+    },
+    {
+      "check": "invariance under global translation",
+      "measured": 2.0650148258027912e-14,
+      "tolerance": 1e-12,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "invariance under global rotation",
+      "measured": 2.220446049250313e-15,
+      "tolerance": 1e-12,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "GJK equals R - 2h(d) on <100>, <110>, <111>",
+      "measured": 6.217248937900877e-15,
+      "tolerance": 1e-11,
+      "unit": "nm",
+      "pass": true,
+      "detail": "2h[100]/a = 1.000000; 2h[110]/a = 1.259921; 2h[111]/a = 1.442250 (exact: 1, 2^(1/3), 3^(1/3))"
+    },
+    {
+      "check": "GJK >= R - 2h(d) for generic directions",
+      "measured": 0.0,
+      "tolerance": 0.0,
+      "unit": "count",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "point-to-body two-sided certificate",
+      "measured": 7.105427357601002e-15,
+      "tolerance": 1e-11,
+      "unit": "nm",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "point-to-body agrees with GJK",
+      "measured": 7.187032124988946e-08,
+      "tolerance": 1e-06,
+      "unit": "nm",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "face-centre normal distance",
+      "measured": 8.881784197001252e-16,
+      "tolerance": 1e-12,
+      "unit": "nm",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "[111] corner distance",
+      "measured": 3.552713678800501e-15,
+      "tolerance": 1e-09,
+      "unit": "nm",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "exact volume coefficient equals 0.9009589",
+      "measured": 2.2641769035540232e-07,
+      "tolerance": 1e-06,
+      "unit": "relative",
+      "pass": true,
+      "detail": "literature 0.9 a^3 is 0.1064 % below the exact volume"
+    },
+    {
+      "check": "volume weights sum to the exact volume",
+      "measured": 2.220446049250313e-16,
+      "tolerance": 1e-12,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "all volume nodes lie inside the body",
+      "measured": 0.0,
+      "tolerance": 0.0,
+      "unit": "count",
+      "pass": true,
+      "detail": "the exact-boundary rules never place a node outside, so no partial voxel is ever counted as a full one"
+    },
+    {
+      "check": "surface weights sum to the surface area",
+      "measured": 4.322257593614154e-06,
+      "tolerance": 0.0001,
+      "unit": "relative",
+      "pass": true,
+      "detail": "area = 876.6501 nm^2, between the sphere 561.5814 and the sharp cube 1072.5414"
+    },
+    {
+      "check": "386 surface elements recovered from the 8x8x8 cube lattice",
+      "measured": 0.0,
+      "tolerance": 0.0,
+      "unit": "count",
+      "pass": true,
+      "detail": "6*8^2 + 2 = 386"
+    },
+    {
+      "check": "27 volume elements",
+      "measured": 0.0,
+      "tolerance": 0.0,
+      "unit": "count",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "<x^2> equals the closed form 3 a^2 / 40",
+      "measured": 0.00023979441331323237,
+      "tolerance": 0.002,
+      "unit": "relative",
+      "pass": true,
+      "detail": "<x^2>/a^2 = 0.07501798, so the leading finite-size correction is 30 <x^2>/a^2 = 2.250540 times (a/R)^2"
+    },
+    {
+      "check": "far-field excess is a pure quadrupole term, 2.25 (a/R)^2",
+      "measured": 0.007697219218357532,
+      "tolerance": 0.01,
+      "unit": "absolute",
+      "pass": true,
+      "detail": "scaled excess over R/a = 30..80 spans 2.25770 to 2.26069, analytic value 30 <x^2>/a^2 = 2.25"
+    },
+    {
+      "check": "U_attr reaches -eps1 (A/pi^2) V^2 / R^6 at R/a = 80",
+      "measured": 0.00035276519050286836,
+      "tolerance": 0.0005,
+      "unit": "relative",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "fitted far-field exponent equals 6",
+      "measured": 0.0015267767965481127,
+      "tolerance": 0.003,
+      "unit": "absolute",
+      "pass": true,
+      "detail": "measured exponent = 6.00152678 between R/a = 40 and 80"
+    },
+    {
+      "check": "components within 1 % at gaps >= 2.99 nm",
+      "measured": 0.0014897034315177748,
+      "tolerance": 0.01,
+      "unit": "relative",
+      "pass": true,
+      "detail": "this is the separation range that matters for the well and for the 3 nm working point"
+    },
+    {
+      "check": "components within 1 % at a 1 nm gap",
+      "measured": 0.005810675745548055,
+      "tolerance": 0.01,
+      "unit": "relative",
+      "pass": true,
+      "detail": "the near-contact case.  It is the hardest one because the 1/r^6 integrand concentrates in a thin layer at the facing faces, and it only passes because the nested Cartesian rule clusters its nodes there.  The radial rule is NOT converged here even at 8192 nodes; see outputs/convergence/.  The repulsive term is exact to machine precision at every gap."
+    },
+    {
+      "check": "overlapping pair is rejected",
+      "measured": 0.0,
+      "tolerance": 0.0,
+      "unit": "count",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "check": "overlapping pair returns +inf",
+      "measured": 0.0,
+      "tolerance": 0.0,
+      "unit": "count",
+      "pass": true,
+      "detail": "hard core is enforced by GJK, not by the bounded soft repulsion"
+    },
+    {
+      "check": "just-separated pair is finite",
+      "measured": 0.0,
+      "tolerance": 0.0,
+      "unit": "count",
+      "pass": true,
+      "detail": "gap = 1.000e-06 nm, U_pair = -300.0687 kcal/mol"
+    },
+    {
+      "check": "independent re-implementation matches legacy pair_vdw_energy_J",
+      "measured": 1.887379141862766e-15,
+      "tolerance": 1e-12,
+      "unit": "relative",
+      "pass": true,
+      "detail": "[100] R=19.0000 nm, U=-4.8834e-21 J; [110] R=24.3848 nm, U=-9.2615e-22 J; [111] R=28.5167 nm, U=-2.4532e-22 J"
+    }
+  ],
+  "failures": 0
+}
