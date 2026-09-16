@@ -9,18 +9,26 @@ that carries the Fig. S28E minimum.  The potential is frozen
 converged setting, so the only thing changing between curves is the volume
 quadrature.
 
-A caution on mechanism, recorded because an earlier version of this analysis
-got it wrong: the well does NOT require U_rep/|U_attr| to cross 1.  At 27
-voxels that ratio is 0.807 at the minimum and a well still exists.  The
-stationarity condition is
+The mechanism, stated correctly.  Write x = U_rep / |U_attr|, so that
+U_pair = |U_attr| (x - 1) and sign(U_pair) = sign(x - 1).  At large D the
+attraction dominates, x falls well below 1 and U_pair is negative.  An
+interior minimum therefore exists if and only if x rises above 1 somewhere at
+small D, which makes U_pair positive near contact and forces a turning point
+in between.  The crossing is NOT the minimum: at 27 voxels x crosses 1 at
+D = 1.35 nm while the minimum sits at 3.15 nm, where x is only 0.808.
 
-    d|U_attr|/dD (x - 1) + |U_attr| dx/dD = 0,     x = U_rep / |U_attr|
+Measured max(x) over the curve, which is the quantity that decides the well:
 
-so a minimum needs x to be falling with D fast enough there, not to exceed 1.
-What the refinement actually destroys is the near-cancellation: at 27 voxels
-|U_attr| and U_rep are within 24 % of each other, so the small residue is free
-to be non-monotonic; in the limit |U_attr| is 2.2x U_rep and the residue
-simply tracks the attraction.
+    midpoint  27 voxels   1.0975   well at 3.15 nm
+    midpoint  64 voxels   0.6944   none
+    midpoint  208 voxels  0.5167   none
+    midpoint  12512       0.4562   none
+    cartesian 27 voxels   0.4698   none
+    cartesian 13824       0.4577   none
+
+So the SI's well is a marginal feature: 27 midpoint voxels put max(x) just
+9.8 % above the threshold of 1, and refining drops it to 0.456, a factor 2.4
+below threshold.
 
 Outputs:
   outputs/convergence/B7_voxel_curve_family.csv
