@@ -1,0 +1,28 @@
+{
+  "tilt_halfangle_deg": 2,
+  "face_twist_halfwidths_deg": [
+    1,
+    2,
+    5,
+    10
+  ],
+  "tip_twist": "free 0..2pi",
+  "samples_per_scramble": 65536,
+  "scrambles": 4,
+  "angular_quadrature_order": 48,
+  "reference": "two uncoupled particles with free SO(3) body orientations",
+  "cage_count": 2,
+  "symmetry_face": 24,
+  "symmetry_tip": 8,
+  "approximation": "independent local cages, fixed centres, point dipoles, inherited constant effective cubic K",
+  "not_included": [
+    "SC lattice",
+    "many-body magnetic correlations",
+    "20 s dynamics",
+    "positional entropy",
+    "ligand/solvent PMF",
+    "orientation-dependent vdW"
+  ],
+  "vdW_diagnostic": "48-per-axis sharp cube at nominal posture, not in main curves",
+  "parameter_status": "tilt/twist widths are sensitivity assumptions, not fitted or measured"
+}

@@ -1,0 +1,15 @@
+{
+  "window_s": 20,
+  "face": "axial rotation only",
+  "tip": "full 3D body rotation",
+  "Brownian_treatment": "adiabatic conditional equilibrium, not explicit trajectory",
+  "intrinsic_moments": "8 cubic minima in body frame",
+  "face_tilt_halfangle_deg": 2,
+  "face_tilt_treatment": "entropy regularization only; magnetic small-cone limit",
+  "rate_model": "new adiabatic angular free energies at wells and saddles",
+  "reference": "two uncoupled particles with free body orientations",
+  "vdW": "inherited nominal-posture 4^3 voxel energy; not angle averaged",
+  "plotted_main_curves": "stage1 Udd; stage2 F_orient; stage3 F_orient + rotation constraint; all exclude vdW",
+  "geometry_warning": "free tip rotations do not maintain a literal tip-contact geometry",
+  "assembly_free_energy": "not computed: ligand PMF, positional entropy, many-body constraints absent"
+}

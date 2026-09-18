@@ -1,0 +1,25 @@
+{
+  "1.0": {
+    "delta_Fmag_after_rotation_kBT": [],
+    "delta_Fcontact_after_rotation_kBT": []
+  },
+  "2.0": {
+    "delta_Fmag_after_rotation_kBT": [],
+    "delta_Fcontact_after_rotation_kBT": []
+  },
+  "5.0": {
+    "delta_Fmag_after_rotation_kBT": [],
+    "delta_Fcontact_after_rotation_kBT": [
+      245.04872092894217,
+      294.15752883546355
+    ]
+  },
+  "10.0": {
+    "delta_Fmag_after_rotation_kBT": [
+      244.8976751063435
+    ],
+    "delta_Fcontact_after_rotation_kBT": [
+      232.79580844980333
+    ]
+  }
+}

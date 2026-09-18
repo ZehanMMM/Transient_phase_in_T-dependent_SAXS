@@ -1,0 +1,20 @@
+{
+  "initial": "uniform 64-state prior at 300 K, only once",
+  "start_hold": "included at 300 K",
+  "end_K": 200,
+  "step_K": 10,
+  "ramp_s": 120,
+  "hold_s": [
+    20,
+    150
+  ],
+  "ramp_substep_K": 0.25,
+  "plotted": "exact hold-average Udd, independent face vdW and kBT references",
+  "dynamics": "Neel only, probability inherited through every ramp and hold",
+  "body_rotation": false,
+  "entropy_terms": false,
+  "penalty_terms": false,
+  "smoothing": "PCHIP display of 11 actual frame averages, not extra temperature measurements",
+  "geometry": "fixed hypothetical face and tip pairs throughout, no structure conversion",
+  "assumptions": "constant Ms; discrete easy-axis minima; no intrawell fluctuations or assembly population"
+}
