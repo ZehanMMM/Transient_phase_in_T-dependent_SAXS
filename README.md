@@ -153,3 +153,37 @@ The latest concise draft is located at:
 versions/V10_multiphysics_nanocube/outputs/
 JACS_SI_temperature_dependent_pair_energy_model_20s_concise.docx
 ```
+
+### Configuration-averaged colloid / superlattice populations
+
+```powershell
+python versions/V10_multiphysics_nanocube/code/configuration_averaged_assembly.py
+python -m unittest discover -s versions/V10_multiphysics_nanocube/code -p test_configuration_averaged_assembly.py
+```
+
+Every model above evaluates one fixed pair geometry and reports its energy;
+none of them decides whether the pair exists. This one promotes the contact
+geometry to a label of the configuration space, `{free, face, tip}` times the
+inherited 8 x 8 lab <111> dipole pairs, and solves the resulting 192-state
+detailed-balanced master equation. It answers what fraction of the system is
+colloidal against superlattice, and what the equivalent total system energy is,
+over 200-300 K.
+
+The van der Waals and gap models are the inherited ones; `geometry_model.py`
+is not modified and the V13 `npvdw` potential is not used. Binding needs one
+length and one concentration: detailed balance fixes the reaction volume from
+the Smoluchowski encounter rate and the diffusive escape frequency, leaving the
+ligand-shell escape length and the volume fraction as the only free inputs.
+Both are assumptions rather than measurements and both are swept.
+
+Results, figures and a detailed discussion are in
+`versions/V10_multiphysics_nanocube/outputs/configuration_averaged_assembly/REPORT.md`,
+which also records two audit findings that hold independently of the model:
+the inherited 4^3 voxel van der Waals sum is under-converged by a factor 1.9,
+and `barrier_distribution`'s 11-node Gauss-Hermite rule is 15 % wrong for the
+blocked fraction because the survival factor is nearly a step in the barrier.
+
+The populations are equilibrium quantities at a stated concentration, not a
+phase diagram, and the superlattice mode is a mean-field coordination scaling
+of a pair model rather than a many-body calculation. Quantities that the
+inputs cannot support are reported as NaN rather than zero.

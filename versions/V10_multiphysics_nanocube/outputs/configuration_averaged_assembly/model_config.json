@@ -1,0 +1,50 @@
+{
+  "state_space": "3 contact labels x 64 lab <111> dipole pairs = 192 states",
+  "contacts": [
+    "free",
+    "face",
+    "tip"
+  ],
+  "surface_gap_nm": 3.0,
+  "window_s": 20.0,
+  "volume_fraction": 0.01,
+  "escape_length_nm": 0.5,
+  "site_volume_nm3": 59.69026041820608,
+  "vdw_model": "INHERITED 4^3 sharp-cube voxel Hamaker sum, unchanged",
+  "gap_model": "INHERITED exact rounded-cube (1.5 nm Minkowski) centre distance",
+  "coordination_numbers": {
+    "face": 6,
+    "tip": 8
+  },
+  "bound_rotations": {
+    "face": "+/-90 deg about the <100> bond",
+    "tip": "+/-120 deg about the <111> bond",
+    "free": "inherited six <100> quarter turns"
+  },
+  "rotation_attempt": "mobility / (lambda tau_B) per move, lambda from sum(R-I) = -lambda (I-P); first-rank decay = 1/tau_B",
+  "neel_rates": "inherited neel_pair_generator barriers, verified identical",
+  "binding": "k_on = z_c k_diff n exp(-U+/kBT), k_off = (k_diff/v_site) exp(-(-U)+/kBT); detailed balance exact",
+  "free_state_energy": "0; dipolar coupling at the mean free separation reported as free_state_dipole_diagnostic",
+  "initial_condition": "uniform over the 64 free-label dipole states, reset independently at every temperature",
+  "assumptions": [
+    "phi and l are not measured here",
+    "superlattice mode is a mean-field z_c/2 scaling of a pair model",
+    "no ligand/solvent PMF, no face<->tip conversion path",
+    "constant Ms, CV = 0, inherited effective cubic K"
+  ],
+  "equilibrium_check": "closed_form_p_bound_error column; the propagator and the analytic Boltzmann split must agree",
+  "scans": {
+    "face_tip_competition": "free vs parallel dipole manifold x face twist tolerance 1, 2, 5, 10 deg; resolves which contact is preferred",
+    "blocked_rotation": {
+      "tip": "full",
+      "face": "none"
+    },
+    "history_cooling": "frozen dipole distribution inherited from the pair freeze temperature, weighted by p_bound there; bound / computed / dispersed branches",
+    "gradual_cooling": "same, but tau_N against a fixed window with lognormal sizes CV = 0, 5, 10, 15 %; three-component pair mixture, no step",
+    "cooling_trajectory": "fixed face contact cooled from 300 K; dipole frozen at tau_N = window; inherit = dispersed (random) or annealed (ordered)",
+    "restricted_channels": "only face, or only tip, allowed to form; pair fraction and total energy per twist tolerance and manifold",
+    "volume_fraction_sweep": "phi = 1e-4 .. 1e-1, closed form",
+    "contact_barrier_scan": "extra rotation barrier 0, 5, 10 kBT; isolates Neel from rotation control of the bond lifetime",
+    "window_scan": "1 us .. 150 s at phi = 1e-4 and 1e-2; shows where the colloid/SL partition stops being equilibrated within the window"
+  }
+}

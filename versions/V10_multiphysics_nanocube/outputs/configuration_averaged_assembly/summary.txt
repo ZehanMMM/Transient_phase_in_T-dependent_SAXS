@@ -1,0 +1,149 @@
+Configuration-averaged colloid/SL populations
+==============================================
+
+--- assembly = dimer (phi = 0.01, v_site = 59.7 nm^3) ---
+   T/K                        regime   p_free   p_face    p_tip  U/NC kBT   tau_N/s  tau_bond/s  survive
+   200   Neel blocked, Brownian only   0.0947   0.9048   0.0005    -5.105  5.65e+04    3.35e-04   0.0000
+   225   Neel blocked, Brownian only   0.2674   0.7315   0.0011    -3.651  1.67e+03    6.94e-05   0.0000
+   250                Neel crossover   0.4964   0.5020   0.0016    -2.242  1.00e+02    1.90e-05   0.0000
+   265                Neel crossover   0.6197   0.3786   0.0018    -1.588  2.38e+01    9.62e-06   0.0000
+   275                Neel crossover   0.6881   0.3101   0.0019    -1.250  9.98e+00    6.31e-06   0.0000
+   300        fast Neel and Brownian   0.8107   0.1873   0.0019    -0.686  1.46e+00    2.42e-06   0.0000
+  thermodynamic: p_bound = 1/2 at T = 250.4 K
+  kinetic:       20 s bond survival = 1/2 at T = nan K
+  window mean vs equilibrium, max |dp_bound| = 1.56e-06
+
+--- assembly = superlattice (phi = 0.01, v_site = 59.7 nm^3) ---
+   T/K                        regime   p_free   p_face    p_tip  U/NC kBT   tau_N/s  tau_bond/s  survive
+   200   Neel blocked, Brownian only   0.0000   1.0000   0.0000   -34.086  5.65e+04    1.56e+06   1.0000
+   225   Neel blocked, Brownian only   0.0000   1.0000   0.0000   -30.299  1.67e+03    2.25e+04   0.9991
+   250                Neel crossover   0.0000   1.0000   0.0000   -27.268  1.00e+02    7.18e+02   0.9725
+   265                Neel crossover   0.0000   1.0000   0.0000   -25.725  2.38e+01    1.22e+02   0.8486
+   275                Neel crossover   0.0000   1.0000   0.0000   -24.789  9.98e+00    4.13e+01   0.6164
+   300        fast Neel and Brownian   0.0000   1.0000   0.0000   -22.723  1.46e+00    3.73e+00   0.0047
+  thermodynamic: p_bound = 1/2 at T = nan K
+  kinetic:       20 s bond survival = 1/2 at T = 278.5 K
+  window mean vs equilibrium, max |dp_bound| = 1.23e-06
+
+--- volume-fraction sensitivity of the thermodynamic crossover ---
+  (closed form on a 120-700 K grid; alpha_c is linear in phi)
+          dimer  phi = 0.0001    T_50 = 165.6 K
+          dimer  phi = 0.001     T_50 = 199.2 K
+          dimer  phi = 0.01      T_50 = 250.4 K
+          dimer  phi = 0.1       T_50 = 340.2 K
+   superlattice  phi = 0.0001    T_50 = 496.9 K
+   superlattice  phi = 0.001     T_50 = 597.7 K
+   superlattice  phi = 0.01      T_50 = nan K
+   superlattice  phi = 0.1       T_50 = nan K
+
+--- rotation-barrier control of the bond lifetime (superlattice) ---
+   T/K  barrier/kBT   tau_bond/s  Neel blocked  rotation blocked  direct only
+   200            0     1.56e+06      1.56e+06          1.98e+06     5.39e+06
+   250            0     7.18e+02      7.18e+02          9.62e+02     2.32e+03
+   300            0     3.73e+00      3.74e+00          5.67e+00     1.17e+01
+   200            5     1.79e+06      1.79e+06          1.98e+06     5.39e+06
+   250            5     7.76e+02      7.77e+02          9.62e+02     2.32e+03
+   300            5     4.19e+00      4.24e+00          5.67e+00     1.17e+01
+   200           10     1.83e+06      1.83e+06          1.98e+06     5.39e+06
+   250           10     9.24e+02      1.29e+03          9.62e+02     2.32e+03
+   300           10     5.61e+00      1.07e+01          5.67e+00     1.17e+01
+
+--- face vs tip: (F_tip - F_face), negative favours tip ---
+  The <111> easy axis sits at the magic angle to a <100> bond, so
+  U_dd(face) is identically ZERO for parallel moments; the face well
+  needs s1.s2 = -1/3.  A <111> bond gives -2C head-to-tail.
+
+  manifold   T/K   d_vdW  d_Udd_min  dF_dip_ens  dF_dip_1pair  d_F_twist  dF_tot_ens  dF_tot_1pair
+      free   200    1.68       5.34        7.76          7.76      -4.97        2.79          2.79
+      free   250    1.34       4.27        6.05          6.05      -4.97        1.08          1.08
+      free   300    1.12       3.56        4.86          4.86      -4.97       -0.11         -0.11
+
+  manifold   T/K   d_vdW  d_Udd_min  dF_dip_ens  dF_dip_1pair  d_F_twist  dF_tot_ens  dF_tot_1pair
+   blocked   200    1.68       5.34        7.76          0.23      -4.97        2.79         -4.74
+   blocked   250    1.34       4.27        6.05          0.41      -4.97        1.08         -4.56
+   blocked   300    1.12       3.56        4.86          0.47      -4.97       -0.11         -4.50
+
+  twist-entropy advantage 2 ln(pi/(3 delta)) for tip; the tilt cone cancels:
+    delta =    1 deg   8.19 kBT
+    delta =    2 deg   6.80 kBT
+    delta =    5 deg   4.97 kBT
+    delta =   10 deg   3.58 kBT
+
+  With the manifold SWITCHED at T_B (free above, blocked below), which contact
+  is preferred over 200-300 K:
+    delta =    1 deg  ensemble : tip at 200-300 K
+    delta =    1 deg  one pair: tip at 200-300 K
+    delta =    2 deg  ensemble : tip at 226-300 K
+    delta =    2 deg  one pair: tip at 200-300 K
+    delta =    5 deg  ensemble : tip at 295-300 K
+    delta =    5 deg  one pair: tip at 200-300 K
+    delta =   10 deg  ensemble : tip at nowhere
+    delta =   10 deg  one pair: tip at 200-250 K
+
+--- restricted single-channel assembly (dimer, only one contact allowed) ---
+  alpha_c = z_tip v_site n w_c(delta); w_tip = 1 and w_face = (3 delta/pi)^2,
+  the tilt-free part of the face/tip orientational ratio.
+
+ delta  manifold   T/K     p_face      p_tip  p_tip/p_face   U_face    U_tip
+     1      free   200   3.53e-03   5.39e-03           1.5   -0.020   -0.008
+     1      free   250   3.74e-04   3.18e-03           8.5   -0.002   -0.003
+     1      free   300   8.56e-05   2.37e-03          27.8   -0.000   -0.002
+     1   blocked   200   3.44e-03   5.39e-03           1.6   -0.019   -0.008
+     1   blocked   250   3.74e-04   3.18e-03           8.5   -0.002   -0.003
+     1   blocked   300   8.55e-05   2.37e-03          27.8   -0.000   -0.002
+     2      free   200   1.40e-02   5.39e-03           0.4   -0.079   -0.008
+     2      free   250   1.50e-03   3.18e-03           2.1   -0.007   -0.003
+     2      free   300   3.42e-04   2.37e-03           6.9   -0.001   -0.002
+     2   blocked   200   1.28e-02   5.39e-03           0.4   -0.072   -0.008
+     2   blocked   250   1.48e-03   3.18e-03           2.1   -0.007   -0.003
+     2   blocked   300   3.42e-04   2.37e-03           7.0   -0.001   -0.002
+     5      free   200   8.13e-02   5.39e-03           0.1   -0.459   -0.008
+     5      free   250   9.28e-03   3.18e-03           0.3   -0.041   -0.003
+     5      free   300   2.13e-03   2.37e-03           1.1   -0.008   -0.002
+     5   blocked   200   5.27e-02   5.39e-03           0.1   -0.296   -0.008
+     5   blocked   250   8.76e-03   3.18e-03           0.4   -0.039   -0.003
+     5   blocked   300   2.11e-03   2.37e-03           1.1   -0.008   -0.002
+    10      free   200   2.61e-01   5.39e-03           0.0   -1.475   -0.008
+    10      free   250   3.61e-02   3.18e-03           0.1   -0.161   -0.003
+    10      free   300   8.49e-03   2.37e-03           0.3   -0.031   -0.002
+    10   blocked   200   9.76e-02   5.39e-03           0.1   -0.541   -0.008
+    10   blocked   250   2.94e-02   3.18e-03           0.1   -0.131   -0.003
+    10   blocked   300   8.09e-03   2.37e-03           0.3   -0.030   -0.002
+
+  The odds ratio p_tip/p_face equals exp(-dF_total) of the competition table
+  above, so the two analyses are the same statement in different variables.
+
+HOW TO READ THIS
+----------------
+1. Tip-to-tip never competes.  The inherited rounded-cube geometry puts the
+   tip centres at 28.5 nm against 19.0 nm for face, so the tip vdW is
+   -0.09 kBT against -1.77 kBT and p_tip stays below 0.2 % at every
+   temperature.  The colloid/SL competition is face against free, only.
+
+2. The colloid/SL POPULATIONS are equilibrated on the observation window.
+   Encounters take ~2e-06 s at phi = 0.01, so the 20 s mean and the
+   equilibrium split agree to ~1e-6 everywhere.  Detailed balance then makes
+   the split the same function of T whether Neel or Brownian rotation is the
+   channel that equilibrates the dipole label.  Regime 1, 2 and 3 do NOT
+   differ in their populations; they differ in the bond LIFETIME below.
+
+3. One bond is never enough.  In dimer mode the deepest bond is only -5.7 kBT
+   per NC and the diffusive escape prefactor is ~1e8 /s, so no pair survives 20 s
+   at any temperature in 200-300 K.  An isolated pair is a rapidly exchanging
+   contact, not a structure, even where 90 % of pairs are bound at any instant.
+
+4. A superlattice site (-34 to -23 kBT per NC) is where the regimes separate:
+     300 K  tau_bond = 3.7 s < 20 s window, survival 0.005  -> dissolves while observed
+     250 K  tau_bond = 718 s, survival 0.973           -> persists
+     200 K  tau_bond = 1.6e+06 s, survival 1.000        -> effectively frozen
+   The 20 s survival passes 1/2 at 278 K and the dimer population
+   passes 1/2 at 250 K.  Both land inside the experimentally
+   flagged 253-273 K transient-aggregation band; neither was fitted to it.
+
+5. WHICH relaxation dissolves the bond depends on the contact barrier, which
+   the inherited model sets to zero as an optimistic accessibility baseline.
+   At zero barrier the contact-preserving Brownian rotation dominates and Neel
+   is a ~2x modifier; at +10 kBT the rotation channel is shut and the lifetime
+   becomes Neel limited.  See contact_barrier_scan.csv.  The user-facing
+   statement "fast Neel breaks the pair up" is therefore the BARRIER-LIMITED
+   branch of this model, not the zero-barrier default.
