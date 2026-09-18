@@ -1,0 +1,5 @@
+case,epsilon2,max_U_rep_over_U_attr,gap_at_max_nm,x_equals_1_crossings,interior_minima,interior_maxima
+literature,290.0000,0.455209,3.000,0,none,none
+eps2 scaled so max(x) = 1,637.0705,1.000000,3.000,2,6.500 nm / -0.9047 kcal/mol,3.000 nm / +0.0000 kcal/mol
+eps2 scaled so max(x) = 1.5,955.6058,1.500000,3.000,1,15.200 nm / -0.0991 kcal/mol,0.660 nm / +62.8224 kcal/mol
+eps2 scaled so max(x) = 3,1911.2115,3.000000,3.000,1,31.300 nm / -0.0059 kcal/mol,none

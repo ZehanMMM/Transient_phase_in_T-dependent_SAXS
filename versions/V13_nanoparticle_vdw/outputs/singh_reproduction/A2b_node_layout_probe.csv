@@ -1,0 +1,5 @@
+layout,outer_layer_|x|/a,min_weight_nm3,max_weight_nm3,weight_sum_nm3,U_attr_at_2.99nm_kcalmol,ratio_to_regular_lattice
+regular_lattice,0.333333,79.6660,79.6660,2150.9818,-43.836758,1.0000
+cut_plane_centroid,0.333742,79.6660,79.6660,2150.9818,-39.268473,0.8958
+cut_plane_true_weight,0.333742,69.4117,88.6193,2150.9818,-38.645074,0.8816
+equal_volume_centroid,0.328321,79.6660,79.6660,2150.9818,-37.333981,0.8517

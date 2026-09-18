@@ -1,0 +1,65 @@
+{
+  "window_s": 20.0,
+  "initial_state": "uniform 1/64, reset at each T",
+  "reference": "two uncoupled particles with identical magnetic state spaces",
+  "approximation": "64 exact easy-axis states, no intrawell q(T) rescaling",
+  "anisotropy": "all easy-axis minima subtracted to zero; barrier enters rates only",
+  "rigid_body_rotation": "not simulated; free Brownian times are diagnostics only",
+  "temperature_step_K": 1.0,
+  "core_nm": 16.0,
+  "ligand_nm": 1.5,
+  "gap_face_nm": 3.0,
+  "gap_tip_nm": 3.0,
+  "Ms_A_per_m": 285000.0,
+  "Ms_T_dependence": "constant sample 300 K value, no measured curve available",
+  "tau0_s": 9.8e-10,
+  "barrier_J": 8.749393178570932e-20,
+  "TB_K": 250.0,
+  "TB_calibration_time_s": 100,
+  "size_CV": 0,
+  "Hamaker_J": 2e-20,
+  "assembly_free_energy": "not computed: ligand/solvent and concentration missing",
+  "hexane_below_250K": "extrapolation, not experimentally constrained",
+  "state_directions": [
+    [
+      -0.5773502691896258,
+      -0.5773502691896258,
+      -0.5773502691896258
+    ],
+    [
+      -0.5773502691896258,
+      -0.5773502691896258,
+      0.5773502691896258
+    ],
+    [
+      -0.5773502691896258,
+      0.5773502691896258,
+      -0.5773502691896258
+    ],
+    [
+      -0.5773502691896258,
+      0.5773502691896258,
+      0.5773502691896258
+    ],
+    [
+      0.5773502691896258,
+      -0.5773502691896258,
+      -0.5773502691896258
+    ],
+    [
+      0.5773502691896258,
+      -0.5773502691896258,
+      0.5773502691896258
+    ],
+    [
+      0.5773502691896258,
+      0.5773502691896258,
+      -0.5773502691896258
+    ],
+    [
+      0.5773502691896258,
+      0.5773502691896258,
+      0.5773502691896258
+    ]
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "window_s": 20.0,
+  "body_moves": "six +/-90-degree <100> rigid rotations per particle",
+  "Brownian_per_path_attempt": "1/(4*tau_B), calibrated to first-rank isolated decay",
+  "Brownian_barrier": "exact maximum dipolar energy along each rigid rotation minus initial energy",
+  "contact_barrier": "zero baseline, not experimentally measured",
+  "initial": "uniform 64 lab directions, independently reset at every T",
+  "Hamiltonian": "same old 64 endpoint Udd values; body-frame Eani at zero minima",
+  "geometry": "same endpoint face/tip centre distances; no face-to-tip conversion or translation simulated",
+  "path_warning": "hard-core/ligand path accessibility NOT verified; face recontact may require separating particles",
+  "state_reduction": "24 cubic body registries map onto 8 lab moments; other 3-fold degeneracy is lumped",
+  "plotted": "Udd only; no entropy, deficit, rotational penalty or vdW added",
+  "drag": "inherited sphere-equivalent hexane rotational drag; no many-body contact friction"
+}

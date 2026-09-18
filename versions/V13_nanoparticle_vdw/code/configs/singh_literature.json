@@ -1,0 +1,20 @@
+{
+  "label": "singh_literature",
+  "epsilon1": 130.0,
+  "epsilon2": 290.0,
+  "beta_nm": 9.56,
+  "hamaker_kcal_per_mol": 3.0,
+  "overall_scale": 1.0,
+  "kw_element_count": 27,
+  "kw_volume_convention": "literature",
+  "volume_scheme": "grid27",
+  "volume_n": 3,
+  "surface_scheme": "lattice",
+  "surface_n": 8,
+  "surface_area_mode": "cube_param",
+  "surface_refine": 48,
+  "r2_mode": "nearest_element",
+  "symmetrise_repulsion": true,
+  "forbid_overlap": true,
+  "provenance": "Singh et al. SI Eqn. 4 and p. 23-24 verbatim: eps1=130, eps2=290, beta=9.56 nm, A=3 kcal/mol, 27 volume elements, 386 surface elements, K_W = eps1 (A/pi^2)(0.9a^3/27)^2. Node coordinates, element areas and the precise r_2 pairing rule are NOT given in the SI and are this project's documented reconstruction."
+}

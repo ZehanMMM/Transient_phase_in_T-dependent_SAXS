@@ -1,0 +1,20 @@
+{
+  "label": "singh_calibrated_si_mesh",
+  "epsilon1": 33.75212975271947,
+  "epsilon2": 94.79717297862977,
+  "beta_nm": 7.037461548860602,
+  "hamaker_kcal_per_mol": 3.0,
+  "overall_scale": 1.0,
+  "kw_element_count": 27,
+  "kw_volume_convention": "literature",
+  "volume_scheme": "grid27",
+  "volume_n": 3,
+  "surface_scheme": "lattice",
+  "surface_n": 8,
+  "surface_area_mode": "cube_param",
+  "surface_refine": 48,
+  "r2_mode": "nearest_element",
+  "symmetrise_repulsion": true,
+  "forbid_overlap": true,
+  "provenance": "CALIBRATED, not literature.  Eqn. 4 form and the SI's 27-element / 386-element discretisation retained; (eps1, eps2, beta) least-squares fitted to the digitised Fig. S28E curve of Singh et al. Literature values were (130, 290, 9.56 nm) and do NOT reproduce that curve.  Do not cite these numbers as the published parameters."
+}

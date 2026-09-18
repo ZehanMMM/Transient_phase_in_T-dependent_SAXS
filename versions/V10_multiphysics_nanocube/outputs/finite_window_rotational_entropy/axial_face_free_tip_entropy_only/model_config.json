@@ -1,0 +1,12 @@
+{
+  "window_s": 20,
+  "rotation_domain": "axial-face-free-tip",
+  "face_tilt_deg": 2.0,
+  "face_twist": "full 2pi",
+  "tip_orientation": "full SO(3)",
+  "initial": "uniform 64 states reset independently at each T; NO cooling history",
+  "dynamics": "unchanged fixed-body Neel model, not free-body dynamics",
+  "entropy": "factorized allowed-domain measure, per-pair -2kBT ln(f)",
+  "vdW": "separate reference, excluded from all main curves",
+  "warning": "entropy-only sensitivity; not a self-consistent joint rotational/magnetic model"
+}

@@ -26,8 +26,29 @@
 !/versions/V10_multiphysics_nanocube/code/pair_energy_model.py
 !/versions/V10_multiphysics_nanocube/code/plot_energy_over_kbt.py
 !/versions/V10_multiphysics_nanocube/code/observation_window_sweep.py
+!/versions/V10_multiphysics_nanocube/code/pair_free_reference.py
+!/versions/V10_multiphysics_nanocube/code/test_pair_free_reference.py
+!/versions/V10_multiphysics_nanocube/code/rotational_entropy_model.py
+!/versions/V10_multiphysics_nanocube/code/test_rotational_entropy_model.py
+!/versions/V10_multiphysics_nanocube/code/finite_window_rotational_entropy.py
+!/versions/V10_multiphysics_nanocube/code/test_finite_window_rotational_entropy.py
+!/versions/V10_multiphysics_nanocube/code/axial_face_free_tip.py
+!/versions/V10_multiphysics_nanocube/code/test_axial_face_free_tip.py
+!/versions/V10_multiphysics_nanocube/code/brownian_configuration_hopping.py
+!/versions/V10_multiphysics_nanocube/code/test_brownian_configuration_hopping.py
+!/versions/V10_multiphysics_nanocube/code/neel_cooling_history.py
+!/versions/V10_multiphysics_nanocube/code/test_neel_cooling_history.py
+!/versions/V10_multiphysics_nanocube/code/configuration_averaged_assembly.py
+!/versions/V10_multiphysics_nanocube/code/test_configuration_averaged_assembly.py
 
 /versions/V10_multiphysics_nanocube/outputs/*
+!/versions/V10_multiphysics_nanocube/outputs/free_reference/
+!/versions/V10_multiphysics_nanocube/outputs/rotational_entropy/
+!/versions/V10_multiphysics_nanocube/outputs/finite_window_rotational_entropy/
+!/versions/V10_multiphysics_nanocube/outputs/axial_face_free_tip/
+!/versions/V10_multiphysics_nanocube/outputs/brownian_configuration_hopping/
+!/versions/V10_multiphysics_nanocube/outputs/neel_cooling_history/
+!/versions/V10_multiphysics_nanocube/outputs/configuration_averaged_assembly/
 !/versions/V10_multiphysics_nanocube/outputs/JACS_SI_temperature_dependent_pair_energy_model_20s_concise.docx
 !/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_E_over_kBT.csv
 !/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_E_over_kBT.pdf
@@ -44,6 +65,9 @@
 !/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings.png
 !/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings_selected.csv
 !/versions/V10_multiphysics_nanocube/outputs/observation_window_face_tip_crossings_summary.txt
+
+# V13 standalone nanoparticle van der Waals module
+!/versions/V13_nanoparticle_vdw/
 
 # Python artifacts
 **/__pycache__/

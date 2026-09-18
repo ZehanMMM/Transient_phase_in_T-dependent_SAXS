@@ -1,0 +1,9 @@
+step,U_pair_J,U_pair_kcalmol,U_pair_kBT_298p15,delta_from_previous_kBT,note
+0_legacy_as_is,-4.883437e-21,-7.028859e-01,-1.186335,0.000000,"sharp-cube 4^3 voxels, V = a^3, Minkowski rounded-cube gap, no eps1, no repulsion; R = 19.0000 nm"
+1_legacy_at_superellipsoid_R,-4.883437e-21,-7.028859e-01,-1.186335,0.000000,same legacy energy function evaluated at the superellipsoid centre distance R = 19.0000 nm: isolates the geometry change in the gap definition alone
+2_superellipsoid_shape_4x4x4,-6.702223e-21,-9.646685e-01,-1.628174,-0.441838,"superellipsoid body and volume (0.90096 a^3), 4^3 exact-boundary quadrature, eps1 = 1, no repulsion: isolates the shape change"
+3_converged_quadrature,-6.141000e-21,-8.838902e-01,-1.491836,0.136338,"same physics, 20^3 volume quadrature: isolates integration accuracy"
+4_plus_eps1_scaling,-8.703558e-20,-1.252726e+01,-21.143591,-19.651755,eps1 = 14.1729 applied (energy-scale constant of the effective potential): isolates the eps1 rescaling
+5_plus_repulsion,7.078259e-20,1.018792e+01,17.195244,38.338835,"steric repulsion added (eps2 = 7.4489, beta = 3.7296 nm): isolates the repulsive term"
+5b_plan3_frozen_repulsion_prefactor,-3.092007e-20,-4.450406e+00,-7.511425,-24.706669,"transfer plan 3: the repulsive prefactor eps2*K_W frozen at the 13.37 nm reference instead of following a^6, so E_rep scales with area rather than a^8"
+6_per_particle_convention,-1.546003e-20,-2.225203e+00,-3.755712,3.755712,"U_pair / 2, the per-particle energy of an isolated two-particle system.  A pure factor of two, listed here so it is never confused with a physical effect."

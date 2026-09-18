@@ -1,0 +1,20 @@
+{
+  "label": "singh_calibrated_continuum",
+  "epsilon1": 14.172867968322747,
+  "epsilon2": 7.448937828102788,
+  "beta_nm": 3.7295938055227413,
+  "hamaker_kcal_per_mol": 3.0,
+  "overall_scale": 1.0,
+  "kw_element_count": 27,
+  "kw_volume_convention": "literature",
+  "volume_scheme": "radial",
+  "volume_n": 14,
+  "surface_scheme": "facegl",
+  "surface_n": 32,
+  "surface_area_mode": "cube_param",
+  "surface_refine": 48,
+  "r2_mode": "exact_surface",
+  "symmetrise_repulsion": true,
+  "forbid_overlap": true,
+  "provenance": "CALIBRATED, not literature.  Eqn. 4 form with converged quadrature (radial volume rule n=14, 6x32^2 surface rule, exact point-to-body r_2); (eps1, eps2, beta) fitted to the digitised Fig. S28E curve.  Separate from singh_calibrated_si_mesh because the SI's coarse 27-element sum is far from the continuum limit."
+}

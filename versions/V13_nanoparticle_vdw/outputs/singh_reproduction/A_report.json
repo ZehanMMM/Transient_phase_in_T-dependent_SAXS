@@ -1,0 +1,301 @@
+{
+  "A1_audit": {
+    "edge_nm": 13.37,
+    "epsilon1": 130.0,
+    "epsilon2": 290.0,
+    "beta_nm": 9.56,
+    "hamaker_kcal_per_mol": 3.0,
+    "hamaker_J": 2.0843086371166122e-20,
+    "K_W_nm6_kcalmol": 250790.33511736034,
+    "K_W_SI_quoted": 250000.0,
+    "volume_exact_nm3": 2153.273041745932,
+    "volume_literature_0p9a3_nm3": 2150.9817777,
+    "volume_coefficient_exact": 0.9009586960069668,
+    "volume_literature_minus_exact_percent": -0.10640843039925185,
+    "volume_node_count": 27,
+    "volume_weight_sum_nm3": 2150.9817777,
+    "surface_node_count": 386,
+    "surface_area_nm2": 876.6463019836242,
+    "surface_area_sharp_cube_6a2_nm2": 1072.5413999999998,
+    "surface_area_sphere_nm2": 561.5813638184852,
+    "evaluation_ms_per_gap": 6.25182772582432
+  },
+  "A1_result": {
+    "minimum_gap_nm": 0.2,
+    "minimum_U_pair_kcalmol": -235.7536709337845,
+    "interior_minimum": false,
+    "U_attr_at_2p99_kcalmol": -43.840497923044616,
+    "U_rep_at_2p99_kcalmol": 19.956427312459738,
+    "U_pair_at_2p99_kcalmol": -23.884070610584875,
+    "U_pair_per_particle_at_2p99_kcalmol": -11.942035305292437,
+    "SI_target_pair_or_per_NC_kcalmol": -2.33
+  },
+  "A1_slope_diagnosis": {
+    "comment": "A well requires the repulsion to decay faster than the attraction (|dln E_rep/dg| > |dln E_attr/dg|) below the well and slower above it.  With beta = 9.56 nm the two logarithmic slopes are nearly equal over the whole relevant range, so E_rep is essentially a constant multiple of E_attr and the sum never turns around.",
+    "gap_window_nm": [
+      1.5,
+      8.0
+    ],
+    "mean_attr_log_slope_per_nm": -0.5327288917889111,
+    "mean_rep_log_slope_per_nm": -0.5463675241576069,
+    "mean_difference_per_nm": -0.013638632368695922,
+    "max_abs_difference_per_nm": 0.08142804254602254
+  },
+  "A2_scan": {
+    "header": [
+      "volume_discretisation",
+      "surface_area_mode",
+      "r2_mode",
+      "interior_well_gap_nm",
+      "well_depth_kcalmol",
+      "U_attr_at_2.99",
+      "U_rep_at_2.99",
+      "U_pair_at_2.99",
+      "rms_vs_figure_as_pair",
+      "rms_vs_figure_as_per_particle"
+    ],
+    "rows": [
+      [
+        "27 elements (SI)",
+        "cube_param",
+        "nearest_element",
+        "none",
+        "-235.7537(edge)",
+        "-43.8453",
+        "19.9584",
+        "-23.8869",
+        "12.463",
+        "5.974"
+      ],
+      [
+        "27 elements (SI)",
+        "cube_param",
+        "exact_surface",
+        "none",
+        "-232.4926(edge)",
+        "-43.8453",
+        "20.2324",
+        "-23.6129",
+        "12.310",
+        "5.898"
+      ],
+      [
+        "27 elements (SI)",
+        "cube_param",
+        "global_min",
+        "16.400",
+        "-0.0994",
+        "-43.8453",
+        "103.6274",
+        "59.7821",
+        "33.057",
+        "16.806"
+      ],
+      [
+        "27 elements (SI)",
+        "equal_solid_angle",
+        "nearest_element",
+        "none",
+        "-240.8134(edge)",
+        "-43.8453",
+        "19.9221",
+        "-23.9232",
+        "12.576",
+        "6.032"
+      ],
+      [
+        "27 elements (SI)",
+        "equal_solid_angle",
+        "exact_surface",
+        "none",
+        "-236.2683(edge)",
+        "-43.8453",
+        "20.2765",
+        "-23.5688",
+        "12.374",
+        "5.932"
+      ],
+      [
+        "27 elements (SI)",
+        "equal_solid_angle",
+        "global_min",
+        "16.400",
+        "-0.0994",
+        "-43.8453",
+        "103.6279",
+        "59.7826",
+        "33.058",
+        "16.806"
+      ],
+      [
+        "continuum volume",
+        "cube_param",
+        "nearest_element",
+        "none",
+        "-31348.6276(edge)",
+        "-79.0954",
+        "19.9584",
+        "-59.1369",
+        "52.571",
+        "26.109"
+      ],
+      [
+        "continuum volume",
+        "cube_param",
+        "exact_surface",
+        "none",
+        "-31345.3665(edge)",
+        "-79.0954",
+        "20.2324",
+        "-58.8629",
+        "52.423",
+        "26.036"
+      ],
+      [
+        "continuum volume",
+        "cube_param",
+        "global_min",
+        "none",
+        "-30698.9269(edge)",
+        "-79.0954",
+        "103.6274",
+        "24.5321",
+        "15.259",
+        "7.835"
+      ],
+      [
+        "continuum volume",
+        "equal_solid_angle",
+        "nearest_element",
+        "none",
+        "-31353.6874(edge)",
+        "-79.0954",
+        "19.9221",
+        "-59.1733",
+        "52.696",
+        "26.172"
+      ],
+      [
+        "continuum volume",
+        "equal_solid_angle",
+        "exact_surface",
+        "none",
+        "-31349.1423(edge)",
+        "-79.0954",
+        "20.2765",
+        "-58.8188",
+        "52.501",
+        "26.075"
+      ],
+      [
+        "continuum volume",
+        "equal_solid_angle",
+        "global_min",
+        "none",
+        "-30698.9235(edge)",
+        "-79.0954",
+        "103.6279",
+        "24.5325",
+        "15.259",
+        "7.835"
+      ]
+    ],
+    "conclusion": "No combination of the SI's open choices produces an interior minimum with (eps1, eps2, beta) = (130, 290, 9.56).  Reading the figure ordinate as U_pair or as U_pair/2 changes the residual by a factor of two but never creates a well, so the pair vs per-particle convention is not the discrepancy."
+  },
+  "A3_calibrated_si_mesh": {
+    "label": "singh_calibrated_si_mesh",
+    "epsilon1": 33.75212975271947,
+    "epsilon1_sigma": 0.30919793395897216,
+    "epsilon2": 94.79717297862977,
+    "epsilon2_sigma": 1.845383017062417,
+    "beta_nm": 7.037461548860602,
+    "beta_sigma_nm": 0.022893259109582627,
+    "literature_values": {
+      "epsilon1": 130.0,
+      "epsilon2": 290.0,
+      "beta_nm": 9.56
+    },
+    "ratio_to_literature": {
+      "epsilon1": 3.8516088007609555,
+      "epsilon2": 3.0591629569520498,
+      "beta_nm": 1.3584443671380073
+    },
+    "K_W_nm6_kcalmol": 65113.13793545496,
+    "rms_residual_kcalmol": 0.05735700153147093,
+    "max_residual_kcalmol": 0.17421969864030684,
+    "n_curve_points": 148,
+    "well_targets_in_fit": {
+      "depth_weight": 8.0,
+      "slope_weight": 40.0
+    },
+    "median_digitisation_halfwidth_kcalmol": 0.059737,
+    "rms_over_full_reference_kcalmol": 0.05980950615658294,
+    "well_gap_nm": 2.9921254625578424,
+    "well_depth_U_pair_kcalmol": -2.346389963429589,
+    "well_depth_U_pair_per_particle_kcalmol": -1.1731949817147944,
+    "well_depth_U_pair_kBT_300K": -3.9358308760107454,
+    "well_depth_U_pair_J": -1.630200288940008e-20,
+    "SI_well_gap_nm": 2.99,
+    "SI_well_depth_kcalmol": -2.33,
+    "SI_well_depth_kBT_300K": -3.908338376840414,
+    "gap_error_nm": 0.0021254625578421837,
+    "depth_error_kcalmol": -0.01638996342958876,
+    "kernel_build_seconds": 0.08762669563293457,
+    "discretisation": {
+      "volume_scheme": "grid27",
+      "volume_n": 3,
+      "surface_scheme": "lattice",
+      "surface_n": 8,
+      "r2_mode": "nearest_element",
+      "surface_area_mode": "cube_param"
+    }
+  },
+  "A3_calibrated_continuum": {
+    "label": "singh_calibrated_continuum",
+    "epsilon1": 14.172867968322747,
+    "epsilon1_sigma": 0.17355473798675153,
+    "epsilon2": 7.448937828102788,
+    "epsilon2_sigma": 0.14516504767522226,
+    "beta_nm": 3.7295938055227413,
+    "beta_sigma_nm": 0.015067613180331375,
+    "literature_values": {
+      "epsilon1": 130.0,
+      "epsilon2": 290.0,
+      "beta_nm": 9.56
+    },
+    "ratio_to_literature": {
+      "epsilon1": 9.172455447306657,
+      "epsilon2": 38.93172512541452,
+      "beta_nm": 2.563281820621768
+    },
+    "K_W_nm6_kcalmol": 27341.67928730587,
+    "rms_residual_kcalmol": 0.22872474024657724,
+    "max_residual_kcalmol": 0.9633255886992318,
+    "n_curve_points": 148,
+    "well_targets_in_fit": {
+      "depth_weight": 8.0,
+      "slope_weight": 40.0
+    },
+    "median_digitisation_halfwidth_kcalmol": 0.059737,
+    "rms_over_full_reference_kcalmol": 0.21733916775266346,
+    "well_gap_nm": 0.2,
+    "well_depth_U_pair_kcalmol": -14114.32564173956,
+    "well_depth_U_pair_per_particle_kcalmol": -7057.16282086978,
+    "well_depth_U_pair_kBT_300K": -23675.347883619495,
+    "well_depth_U_pair_J": -9.806203614051412e-17,
+    "SI_well_gap_nm": 2.99,
+    "SI_well_depth_kcalmol": -2.33,
+    "SI_well_depth_kBT_300K": -3.908338376840414,
+    "gap_error_nm": -2.79,
+    "depth_error_kcalmol": -14111.99564173956,
+    "kernel_build_seconds": 279.2491443157196,
+    "discretisation": {
+      "volume_scheme": "radial",
+      "volume_n": 14,
+      "surface_scheme": "facegl",
+      "surface_n": 32,
+      "r2_mode": "exact_surface",
+      "surface_area_mode": "cube_param"
+    }
+  }
+}
