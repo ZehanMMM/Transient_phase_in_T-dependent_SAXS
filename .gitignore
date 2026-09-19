@@ -40,6 +40,8 @@
 !/versions/V10_multiphysics_nanocube/code/test_neel_cooling_history.py
 !/versions/V10_multiphysics_nanocube/code/configuration_averaged_assembly.py
 !/versions/V10_multiphysics_nanocube/code/test_configuration_averaged_assembly.py
+!/versions/V10_multiphysics_nanocube/code/binodal_phase_diagram.py
+!/versions/V10_multiphysics_nanocube/code/test_binodal_phase_diagram.py
 
 /versions/V10_multiphysics_nanocube/outputs/*
 !/versions/V10_multiphysics_nanocube/outputs/free_reference/
@@ -49,6 +51,7 @@
 !/versions/V10_multiphysics_nanocube/outputs/brownian_configuration_hopping/
 !/versions/V10_multiphysics_nanocube/outputs/neel_cooling_history/
 !/versions/V10_multiphysics_nanocube/outputs/configuration_averaged_assembly/
+!/versions/V10_multiphysics_nanocube/outputs/binodal_phase_diagram/
 !/versions/V10_multiphysics_nanocube/outputs/JACS_SI_temperature_dependent_pair_energy_model_20s_concise.docx
 !/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_E_over_kBT.csv
 !/versions/V10_multiphysics_nanocube/outputs/brownian_cube_rotation_E_over_kBT.pdf

@@ -1,0 +1,26 @@
+{
+  "critical_attraction": 10.698996655518394,
+  "critical_epsilon_kBT": 2.2824526198439243,
+  "registration_cost_kBT": 4.430822384898431,
+  "tilt_deg": 15.5,
+  "dwell_s": 150.0,
+  "size_cv": 0.1,
+  "epsilon_peak": {
+    "inherited/none": 6.021411709772805,
+    "inherited/15.5deg": 1.5905893248743732,
+    "converged/none": 7.330774218104814,
+    "converged/15.5deg": 2.8999518332063827
+  },
+  "epsilon_peak_temperature_K": {
+    "inherited/none": 241.0,
+    "inherited/15.5deg": 241.0,
+    "converged/none": 232.0,
+    "converged/15.5deg": 232.0
+  },
+  "two_phase_temperatures": {
+    "inherited/none": 101,
+    "inherited/15.5deg": 0,
+    "converged/none": 101,
+    "converged/15.5deg": 78
+  }
+}

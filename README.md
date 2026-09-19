@@ -187,3 +187,41 @@ The populations are equilibrium quantities at a stated concentration, not a
 phase diagram, and the superlattice mode is a mean-field coordination scaling
 of a pair model rather than a many-body calculation. Quantities that the
 inputs cannot support are reported as NaN rather than zero.
+
+### Blocked-dipole condensation and the re-entrant binodal
+
+```powershell
+python versions/V10_multiphysics_nanocube/code/binodal_phase_diagram.py
+python -m unittest discover -s versions/V10_multiphysics_nanocube/code -p test_binodal_phase_diagram.py
+```
+
+This supersedes the superlattice framing of `configuration_averaged_assembly`
+for the temperature-dependent SAXS experiment. The measured signature is a
+single broad peak at 19 nm spacing, not the sharp family a superlattice would
+give, so the dense phase is an amorphous condensate and the framework is
+colloidal fluid-fluid phase separation.
+
+The mechanism turns on one point: summed over the 64 lab <111> pair states the
+dipolar energy is identically zero, but condensation is set by the Mayer
+factor and exp is convex, so the orientational average of exp(-U_dd/kBT)
+contributes 4.4 to 7.5 kBT of real attraction with no applied field. That
+attraction is collected only while the moment can be re-sampled. The measured
+19 nm spacing leaves a cube only +/-15.5 degrees of tilt, so inside the
+condensate it cannot reorient and only a Neel flip can re-sample it. Cooling
+therefore deepens every well and simultaneously freezes the moments, the net
+cohesion is non-monotonic, and the binodal closes at both ends.
+
+The van der Waals term is the CONVERGED sharp-cube Hamaker sum, -9.156e-21 J
+for the face pair; the inherited 4^3 voxel value is under-converged by a
+factor 1.875. `geometry_model.py` is not modified.
+
+Results, the energy inventory, the fitted phase diagram and a record of three
+conclusions that were wrong along the way are in
+`versions/V10_multiphysics_nanocube/outputs/binodal_phase_diagram/REPORT.md`.
+
+One parameter is fitted (the size distribution CV) against the two observed
+window edges; the orientational registration cost is not fitted and comes out
+within 0.24 degrees of the cone the measured spacing allows. The free energy is
+van der Waals level and gives the topology and concentration scale, not
+quantitative binodal compositions. Nucleation, and therefore the observed
+hysteresis, is not modelled.

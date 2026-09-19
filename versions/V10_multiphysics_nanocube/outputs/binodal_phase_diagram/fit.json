@@ -1,0 +1,12 @@
+{
+  "size_cv": 0.0484796940471723,
+  "dwell_s": 100.0,
+  "lower_edge_K": 250.0001738960691,
+  "upper_edge_K": 270.0,
+  "registry_cost_kBT": 4.369019026260629,
+  "fitted_tilt_deg": 15.7428656920184,
+  "geometric_tilt_deg": 15.5,
+  "geometric_cost_kBT": 4.430822384898431,
+  "epsilon_threshold_kBT": 2.8440701067926946,
+  "volume_fraction": 0.020932006835937503
+}
