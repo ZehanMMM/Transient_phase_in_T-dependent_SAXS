@@ -27,7 +27,7 @@ spacing, 3 nm gap.
 | annealed dipolar, -D | -4.40 | -5.64 | -7.53 |
 | both moments blocked, b^2 | 0.008 | 0.19 | 0.81 |
 | dipolar actually collected, -[(1-b^2)D + Phi] | -4.36 | -4.59 | -1.44 |
-| total, vdW + dipolar | -6.58 | -7.24 | -4.76 |
+| total, vdW + dipolar | -6.57 | -7.24 | -4.76 |
 
 The van der Waals value is the converged sharp-cube Hamaker sum, -9.156e-21 J
 (A = 2.0e-20 J). The inherited 4^3 voxel sum gives -4.883e-21 J and is

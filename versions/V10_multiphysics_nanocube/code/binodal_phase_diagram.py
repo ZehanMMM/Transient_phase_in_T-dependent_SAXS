@@ -1356,7 +1356,7 @@ def plot_two_energies(table: dict, out: Path, blocking_K: float = 250.0,
               fontsize=12.5, color='#8A6D1F', ha='center', va='center',
               fontweight='bold')
     main.text(blocking - 1.6, -3.4,
-              rf'$T_B$ = {blocking:.0f} K (measured, calibration)', rotation=90,
+              rf'$T_B$ = {blocking:.0f} K', rotation=90,
               fontsize=11.5, color='#8A6D1F', ha='right', va='center',
               fontweight='bold')
     main.text(298, -0.30, f'ensemble half blocked ($b$ = 1/2) at {modelled:.0f} K',

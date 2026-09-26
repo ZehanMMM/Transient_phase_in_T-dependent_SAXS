@@ -110,7 +110,7 @@ derived one.
 |---|---|
 | Two-phase window (lever rule) | 250-268 K (observed 250-270 K) |
 | Peak aggregated particle fraction | 12.8 % at 258 K |
-| Deepest bond free energy | -7.30 kBT at 258 K; -6.58 at 300 K; -4.76 at 200 K |
+| Deepest bond free energy | -7.30 kBT at 258 K; -6.57 at 300 K; -4.76 at 200 K |
 | Inherited frozen term | at most 0.036 kBT, against a ceiling of 2.68 kBT |
 | Ensemble half blocked (b = 1/2) | 244 K |
 | Coordination z = 1 instead | window 239-268 K, frozen term 0.38 kBT |
