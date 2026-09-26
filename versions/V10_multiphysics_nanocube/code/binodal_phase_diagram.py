@@ -143,8 +143,159 @@ def dipolar_mayer_term(temperature_K: float, energies: dict) -> float:
                  - np.log(64.0))
 
 
+# --------------------------------------------------------------------------
+# what a bond keeps when its moments freeze
+# --------------------------------------------------------------------------
+# The blocked fraction of bonds contributes ZERO only if the frozen moment
+# directions are uncorrelated with the bond, which holds when the moment froze
+# in the dilute phase: there is no partner there, so it freezes into one of the
+# eight body-frame <111> easy axes with equal weight (cubic anisotropy, no
+# field), and which face later registers is set by Brownian tumbling.  Summed
+# over the 64 lab states U_dd is identically zero, so such a bond keeps nothing.
+#
+# A moment that freezes while ALREADY BONDED is different: until it blocks it
+# samples the Boltzmann distribution over the pair states, which is weighted
+# towards the eight head-to-tail states at -7.675 kBT, and it freezes out of
+# that biased distribution.  It therefore keeps an attraction.  What limits the
+# bias is geometry, not statistics -- see `frustrated_quench_kBT`.
+NEIGHBOUR_DIRECTIONS = ((1, 0, 0), (-1, 0, 0), (0, 1, 0),
+                        (0, -1, 0), (0, 0, 1), (0, 0, -1))
+
+
+_QUENCH_TOTALS: dict[int, np.ndarray] = {}
+
+
+def _frozen_neighbour_totals(coordination: int) -> np.ndarray:
+    """Energy in joules of each centre axis against every frozen neighbour set.
+
+    Shape (8, 8**z): rows are the centre's easy axes, columns one configuration
+    of the z frozen neighbours.  None of it depends on temperature, so it is
+    built once per coordination and reused; rebuilding it was most of the cost
+    of a cooling sweep.
+    """
+    if coordination not in _QUENCH_TOTALS:
+        params = geometry.PARAMS
+        matrices = []
+        for vector in NEIGHBOUR_DIRECTIONS[:coordination]:
+            direction = np.asarray(vector, float)
+            distance = geometry.center_distance_at_gap_m(
+                direction, SURFACE_GAP_NM * 1e-9, params)
+            energies, _, _, _ = geometry.easy_axis_pair_energies_J(
+                distance * direction, params)
+            matrices.append(np.asarray(energies).reshape(8, 8))
+        index = np.indices((8,) * coordination).reshape(coordination, -1)
+        _QUENCH_TOTALS[coordination] = sum(
+            matrices[k][:, index[k]] for k in range(coordination))
+    return _QUENCH_TOTALS[coordination]
+
+
+def frustrated_quench_kBT(temperature_K: float, coordination: int = 6) -> float:
+    """Attraction per bond kept by a pair that froze inside the condensate.
+
+    One moment serves `coordination` bonds at once and cannot sit in the
+    deepest state of all of them, so the retained energy per bond collapses
+    with the number of neighbours: 7.51 kBT for an isolated pair, 2.64 kBT at
+    z = 6 (250 K).  That frustration, not any averaging, is what keeps the
+    frozen contribution small.
+
+    Exhaustive over all 8**z frozen neighbour configurations -- no sampling and
+    no seed, so the value is reproducible to machine precision.
+    """
+    if not 1 <= coordination <= 6:
+        raise ValueError('coordination must be between 1 and 6')
+    total = _frozen_neighbour_totals(coordination) / (Boltzmann * temperature_K)
+    weight = np.exp(-(total - total.min(axis=0)))
+    weight /= weight.sum(axis=0)
+    return float(-(weight * total).sum(axis=0).mean() / coordination)
+
+
+def loss_fraction(temperature_K: float, energies: dict,
+                  correlated_fraction: float = 0.0,
+                  coordination: int = 6) -> float:
+    """lambda: the share of the dipolar attraction a fully blocked bond loses.
+
+    `correlated_fraction` (f) is the share of blocked moments that froze while
+    already inside the condensate rather than free in the dilute phase.  The
+    lever rule bounds it: at phi_eff = 0.0209 against phi_dense ~ 0.31 at most
+    6.7 % of particles are in the dense phase at any instant, so f <~ 0.07 if
+    exchange is fast compared with the ramp.
+
+        lambda = 1 - f * Q_z / D
+
+    f = 0 gives lambda = 1, the attraction vanishing outright; f = 1 gives
+    lambda = 0.53, because Q_z / D is about 0.47 and nearly independent of
+    temperature.  So the dipolar term is at worst HALVED by freezing, never
+    reversed -- nothing here is ever repulsive.
+    """
+    if correlated_fraction < 0.0 or correlated_fraction > 1.0:
+        raise ValueError('correlated_fraction must be in [0, 1]')
+    if correlated_fraction == 0.0:
+        return 1.0
+    retained = frustrated_quench_kBT(temperature_K, coordination)
+    return 1.0 - correlated_fraction * retained / dipolar_mayer_term(
+        temperature_K, energies)
+
+
+def inherited_frozen_energy(temperatures_K, energies: dict,
+                            aggregated_fraction, dwell_s: float = 100.0,
+                            size_cv: float = 0.048480,
+                            coordination: int = 6,
+                            ceiling_K: float = 340.0,
+                            step_K: float = 0.5) -> dict:
+    """b^2 <U>_P accumulated over the freezing history: no scalar f, no ansatz.
+
+    Replaces `loss_fraction`.  The share of bonds that freeze between T' and
+    T' + dT' is -d(b^2)/dT', so the frozen energy carried at temperature T is
+
+        E_frozen(T) = int_T^inf  (-d b^2/dT')  x(T')  u_kept(T')  dT'
+
+    with x(T') the fraction of particles inside the dense phase at T' and
+    u_kept the energy a bond keeps if it froze in place.  The uniform branch
+    contributes exactly zero -- every row of U sums to zero -- so only the
+    aggregated share appears.
+
+    u_kept = -Q_z(T') k_B T' is a FIXED energy in joules (Q_z(T) T is constant
+    to 0.1 % over 200-300 K), so once inherited it strengthens on further
+    cooling exactly as van der Waals does.  The scalar `loss_fraction` could
+    not express that, nor the fact that bonds frozen at different temperatures
+    inherit different biases.
+
+    b(T) comes from `neel_blocked_fraction`, NOT from the inherited
+    lognormal grid: that grid is too coarse here and misses b^2 by ~30 %.
+    """
+    grid = np.asarray(temperatures_K, float)
+    history = np.arange(min(grid.min(), 200.0), ceiling_K + step_K, step_K)
+    blocked = np.array([neel_blocked_fraction(float(t), dwell_s, size_cv) ** 2
+                        for t in history])
+
+    if callable(aggregated_fraction):
+        bound = np.array([float(aggregated_fraction(float(t)))
+                          for t in history])
+    else:
+        bound = np.interp(history, grid, np.asarray(aggregated_fraction, float))
+    bound = np.clip(bound, 0.0, 1.0)
+
+    kept_J = np.array([-frustrated_quench_kBT(float(t), coordination)
+                       * Boltzmann * float(t) for t in history])
+
+    # freshly frozen share in each interval; b^2 falls as T rises
+    fresh = -np.diff(blocked)
+    midpoint = 0.5 * (history[:-1] + history[1:])
+    weight = 0.5 * (bound[:-1] + bound[1:]) * 0.5 * (kept_J[:-1] + kept_J[1:])
+    # energy carried by everything that froze ABOVE each temperature
+    above = np.r_[np.cumsum((fresh * weight)[::-1])[::-1], 0.0]
+
+    frozen_energy_J = np.interp(grid, history, above)
+    return dict(temperature_K=grid,
+                blocked_weight=np.interp(grid, history, blocked),
+                frozen_energy_J=frozen_energy_J,
+                frozen_kBT=-frozen_energy_J / (Boltzmann * grid),
+                dwell_s=dwell_s, size_cv=size_cv, coordination=coordination)
+
+
 def dense_phase_epsilon(temperature_K: float, energies: dict,
-                        dwell_s: float = 150.0, size_cv: float = 0.10) -> dict:
+                        dwell_s: float = 150.0, size_cv: float = 0.10,
+                        loss_fraction: float = 1.0) -> dict:
     """Cohesive energy per bond in the condensate, in kBT.
 
     Linear in the blocked weight b^2: inside a condensate every bond is
@@ -157,8 +308,10 @@ def dense_phase_epsilon(temperature_K: float, energies: dict,
     dipole = dipolar_mayer_term(temperature_K, energies)
     return dict(temperature_K=temperature_K, blocked_fraction=blocked,
                 blocked_weight=blocked ** 2, vdw_kBT=vdw, dipole_kBT=dipole,
-                epsilon_kBT=vdw + (1.0 - blocked ** 2) * dipole,
-                epsilon_unblocked_kBT=vdw + dipole, epsilon_frozen_kBT=vdw)
+                epsilon_kBT=vdw + (1.0 - loss_fraction * blocked ** 2) * dipole,
+                epsilon_unblocked_kBT=vdw + dipole,
+                epsilon_frozen_kBT=vdw + (1.0 - loss_fraction) * dipole,
+                loss_fraction=loss_fraction)
 
 
 # --------------------------------------------------------------------------
@@ -301,6 +454,59 @@ def registration_cost_kBT(tilt_deg: float = 15.5) -> float:
     if fraction >= 1.0:
         return 0.0
     return float(-2.0 * np.log(fraction))
+
+
+def orientational_cost_kBT(tilt_deg: float = 15.5, coordination: int = 1,
+                           samples: int = 600_000) -> dict:
+    """Orientational entropy cost, counted per PARTICLE and per bond.
+
+    `registration_cost_kBT` above is the isolated-pair value and is exactly
+    right for a pair: one neighbour, any of six faces, a cone of half-angle
+    `tilt_deg`, twist free.  It is NOT right inside a condensate, because a
+    particle has one orientation serving every neighbour at once.  Two
+    non-collinear neighbours already lock all three rotational degrees of
+    freedom, so the per-particle cost SATURATES at about 3.57 kBT however many
+    neighbours follow, while the per-bond share keeps falling as 1/z:
+
+        z = 1  ->  2.22 kBT per particle,  4.43 per bond   (the pair value)
+        z = 2  ->  3.44                    3.44
+        z = 6  ->  3.57                    1.19
+
+    Using the z = 1 cost together with z = 6 coordination -- which is what the
+    cohesion currently does -- overcharges the orientational entropy by 3.6x.
+    The total is nevertheless close to what the observed upper edge demands, so
+    the surplus is standing in for something real that genuinely does scale per
+    contact; ligand conformational entropy at a 3 nm gap is the obvious
+    candidate at 1-3 kBT per contact.  `surplus_per_bond_kBT` reports exactly
+    how much of the fitted cost the orientational term cannot explain.
+
+    Monte Carlo over SO(3), seeded, so the value is reproducible; the z = 1
+    case is checked against the analytic -2 ln[6(1-cos t)/2] in the tests.
+    """
+    from scipy.spatial.transform import Rotation
+
+    if not 1 <= coordination <= 6:
+        raise ValueError('coordination must be between 1 and 6')
+    # Perpendicular directions first, so that `coordination` counts
+    # INDEPENDENT constraints: a collinear pair (+x, -x) is one constraint,
+    # not two, because presenting a face along +x presents one along -x too.
+    faces = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1],
+                      [-1, 0, 0], [0, -1, 0], [0, 0, -1]], float)
+    rotated = np.einsum('nij,kj->nki',
+                        Rotation.random(samples, random_state=0).as_matrix(),
+                        faces)
+    allowed = np.ones(samples, bool)
+    for bond in faces[:coordination]:
+        allowed &= (rotated @ bond > np.cos(np.deg2rad(tilt_deg))).any(axis=1)
+    fraction = float(allowed.mean())
+    per_particle = -np.log(fraction) if fraction > 0 else np.inf
+    return dict(tilt_deg=tilt_deg, coordination=coordination,
+                allowed_fraction=fraction,
+                per_particle_kBT=per_particle,
+                per_bond_kBT=2.0 * per_particle / coordination,
+                pair_cost_kBT=registration_cost_kBT(tilt_deg),
+                surplus_per_bond_kBT=registration_cost_kBT(tilt_deg)
+                - 2.0 * per_particle / coordination)
 
 
 def critical_epsilon_kBT(critical: float) -> float:
@@ -450,7 +656,8 @@ def epsilon_threshold(volume_fraction: float, span=(11.0, 30.0), count=120):
 
 
 def fit_size_cv(volume_fraction, lower_edge_K, upper_edge_K, dwell_s,
-                energies, bracket=(0.0, 0.075)):
+                energies, bracket=(0.02, 0.13), loss_fraction=1.0,
+                threshold_kBT=None, grid_step_K=0.25):
     """CV that reproduces both observed edges at a fixed dwell.
 
     Pinning the upper edge fixes the cut level at eps(upper_edge), which makes
@@ -461,23 +668,30 @@ def fit_size_cv(volume_fraction, lower_edge_K, upper_edge_K, dwell_s,
     """
     from scipy.optimize import brentq
 
-    threshold, _ = epsilon_threshold(volume_fraction)
-    grid = np.arange(200.0, 300.01, 0.25)
+    threshold = (epsilon_threshold(volume_fraction)[0]
+                 if threshold_kBT is None else threshold_kBT)
+    grid = np.arange(200.0, 300.01, grid_step_K)
 
     def edges(size_cv):
         cohesion = np.array([dense_phase_epsilon(float(t), energies, dwell_s,
-                                                 size_cv)['epsilon_kBT']
+                                                 size_cv, loss_fraction)['epsilon_kBT']
                              for t in grid])
         level = float(np.interp(upper_edge_K, grid, cohesion))
         cold = grid < grid[int(np.argmax(cohesion))]
         if not cold.any() or cohesion[cold].min() > level:
-            return None, level, cohesion
+            # The cohesion never falls back to the cut level inside the grid,
+            # so the lower edge sits at or below its floor.  Reporting the
+            # floor keeps `miss` decreasing through this regime; a positive
+            # sentinel here would collide in sign with the small-CV branch and
+            # make the bracket look rootless.
+            return float(grid[0]), level, cohesion
         return float(np.interp(level, cohesion[cold], grid[cold])), level, cohesion
 
     def miss(size_cv):
-        low, _, _ = edges(size_cv)
-        return 1e3 if low is None else low - lower_edge_K
+        return edges(size_cv)[0] - lower_edge_K
 
+    if miss(bracket[0]) * miss(bracket[1]) > 0.0:
+        return None
     size_cv = float(brentq(miss, *bracket, xtol=1e-4))
     low, level, cohesion = edges(size_cv)
     cost = level - threshold
@@ -487,7 +701,8 @@ def fit_size_cv(volume_fraction, lower_edge_K, upper_edge_K, dwell_s,
                 fitted_tilt_deg=tilt, geometric_tilt_deg=15.5,
                 geometric_cost_kBT=registration_cost_kBT(15.5),
                 epsilon_threshold_kBT=threshold, temperatures_K=grid,
-                cohesion_kBT=cohesion, volume_fraction=volume_fraction)
+                cohesion_kBT=cohesion, volume_fraction=volume_fraction,
+                loss_fraction=loss_fraction)
 
 
 def plot_fitted_diagram(fit, out: Path):
@@ -577,6 +792,778 @@ def plot_fitted_diagram(fit, out: Path):
     plt.close(figure)
 
 
+def aggregated_particle_fraction(epsilon_kBT: float,
+                                 volume_fraction: float = SAMPLE_VOLUME_FRACTION):
+    """Lever rule: share of PARTICLES sitting in the dense phase.
+
+    Note this is not the share of the sample VOLUME the dense phase occupies,
+    which is smaller by phi / phi_dense; conflating the two is what produced
+    the bogus "at most 6.7 % of particles" bound earlier.  With phi_dilute -> 0
+    the particle share goes to 1, not to 6.7 %.
+    """
+    attraction = MAX_COORDINATION / 2.0 * epsilon_kBT / CLOSE_PACKED_FRACTION
+    branches = coexistence_by_continuation([attraction])[0]
+    if branches is None:
+        return 0.0
+    dilute, dense = branches
+    if not dilute < volume_fraction < dense:
+        return 0.0
+    volume_share = (volume_fraction - dilute) / (dense - dilute)
+    return float(np.clip(dense * volume_share / volume_fraction, 0.0, 1.0))
+
+
+def self_consistent_cooling(energies: dict, dwell_s: float = 100.0,
+                            size_cv: float = 0.048480,
+                            tilt_deg: float = 15.5,
+                            coordination: int = 6,
+                            volume_fraction: float = SAMPLE_VOLUME_FRACTION,
+                            start_K: float = 320.0, stop_K: float = 200.0,
+                            step_K: float = 2.0) -> list[dict]:
+    """March down in temperature with the frozen bias inherited, not assumed.
+
+    This closes the loop that `loss_fraction` left open.  At each step the
+    bonds that freeze inherit the bias of wherever they were AT THAT MOMENT,
+    and where they were is set by the phase equilibrium one step earlier:
+
+        x(T)  <- lever rule at eps(T)
+        E_frozen(T) <- E_frozen(T + dT) + [b^2(T) - b^2(T + dT)] x u_kept
+        eps(T) <- vdW + (1 - b^2) D + E_frozen / kBT - registration
+
+    Marching rather than iterating to a fixed point is deliberate: the
+    dependence is causal in temperature, so a downward sweep is the physical
+    solution and an upward sweep is a genuinely different one.  f never
+    appears -- it was only ever a summary of this integral.
+    """
+    registration = registration_cost_kBT(tilt_deg)
+    grid = np.arange(start_K, stop_K - 1e-9, -abs(step_K))
+    frozen_J, previous_b2, previous_x = 0.0, None, 0.0
+    trajectory = []
+    for temperature in grid:
+        kbt = Boltzmann * float(temperature)
+        blocked = neel_blocked_fraction(float(temperature), dwell_s, size_cv) ** 2
+        if previous_b2 is not None and blocked > previous_b2:
+            kept_J = (-frustrated_quench_kBT(float(temperature), coordination)
+                      * kbt)
+            frozen_J += (blocked - previous_b2) * previous_x * kept_J
+        previous_b2 = blocked
+        dipole = dipolar_mayer_term(float(temperature), energies)
+        epsilon = (-energies['vdw_J'] / kbt + (1.0 - blocked) * dipole
+                   - frozen_J / kbt - registration)
+        aggregated = aggregated_particle_fraction(epsilon, volume_fraction)
+        previous_x = aggregated
+        trajectory.append(dict(
+            temperature_K=float(temperature), blocked_weight=blocked,
+            dipole_kBT=dipole, vdw_kBT=-energies['vdw_J'] / kbt,
+            frozen_kBT=-frozen_J / kbt, epsilon_kBT=epsilon,
+            aggregated_fraction=aggregated, two_phase=aggregated > 0.0))
+    return trajectory
+
+
+def pair_energy_table(energies: dict, dwell_s: float = 100.0,
+                      size_cv: float = 0.048480, tilt_deg: float = 15.5,
+                      grid=np.arange(200.0, 300.01, 0.5)) -> dict:
+    """Signed bond free energy of ONE pair, negative = binding.
+
+    The registration cost here is unambiguously the z = 1 value, so that term
+    carries none of the per-bond / per-particle bookkeeping the dense phase
+    forces.  The b^2 suppression, however, is NOT a free-pair effect: a
+    particle floating in solution re-randomises its lab-frame moment by
+    Brownian tumbling (tau_B ~ 6 us, near enough temperature independent)
+    whether or not Neel is blocked, so an isolated pair stays annealed at every
+    temperature and shows no re-entrance at all.  What this figure describes is
+    one bond whose particles are CAGED by neighbours -- at 19 nm spacing a cube
+    can tilt only +/-15.5 deg, far short of the 54.7 deg needed to bring a
+    different <111> onto the bond -- which is why Neel is then the only way
+    left to re-sample.
+
+    The frozen bond keeps between none and half of the dipolar attraction --
+    lambda = 1 if the moment froze free in the dilute phase, lambda = lambda(T)
+    from `loss_fraction` at f = 1 if it froze inside an aggregate -- so the
+    dipolar term is returned as a pair of bounds, not a single curve.
+    """
+    grid = np.asarray(grid, float)
+    vdw = np.array([energies['vdw_J'] / (Boltzmann * t) for t in grid])
+    dipole = np.array([dipolar_mayer_term(float(t), energies) for t in grid])
+    blocked = np.array([neel_blocked_fraction(float(t), dwell_s, size_cv)
+                        for t in grid])
+    registration = registration_cost_kBT(tilt_deg)
+    halved = np.array([loss_fraction(float(t), energies, 1.0, 6) for t in grid])
+    bounds = {}
+    for name, lam in (('lost', np.ones_like(grid)), ('halved', halved)):
+        collected = (1.0 - lam * blocked ** 2) * dipole
+        bounds[name] = dict(dipolar=-collected,
+                            total=vdw - collected + registration)
+    blocking_K = float(np.interp(0.5, blocked[::-1], grid[::-1]))
+    return dict(temperature_K=grid, vdw_kBT=vdw, dipole_kBT=dipole,
+                blocked=blocked, blocked_weight=blocked ** 2,
+                registration_kBT=registration, bounds=bounds,
+                blocking_temperature_K=blocking_K,
+                dwell_s=dwell_s, size_cv=size_cv)
+
+
+def _dipole_cartoon(axes, mode: str, colour: str):
+    """One schematic of a cube pair and what its moments are doing.
+
+    Three states, distinguished by two glyphs that stay legible when small: a
+    curved arrow over a cube means the moment can still be re-sampled, and a
+    cross through it means Neel blocking has stopped that.  Ghost arrows were
+    tried first and turned into an unreadable blob at this size.
+
+    'warm'   free to re-sample, but every well is shallow against kBT
+    'window' free to re-sample, and the pair sits head-to-tail -> bound
+    'frozen' blocked at inherited, mutually uncorrelated angles
+    """
+    from matplotlib.patches import FancyArrow, Rectangle
+
+    axes.set(xlim=(-1.08, 1.08), ylim=(-0.95, 1.12))
+    axes.set_aspect('equal')
+    axes.axis('off')
+
+    gap = 0.12 if mode == 'window' else 0.46
+    side = 0.62
+    centres = (-(gap / 2 + side / 2), gap / 2 + side / 2)
+    for cx in centres:
+        axes.add_patch(Rectangle((cx - side / 2, -side / 2), side, side,
+                                 facecolor='#DCDCE6', edgecolor='#33334D',
+                                 lw=1.8, zorder=2))
+
+    angles = {'frozen': (143.0, -24.0),      # inherited, uncorrelated
+              'window': (55.0, -55.0),       # head-to-tail, 110 deg apart
+              'warm': (25.0, 155.0)}[mode]
+    length = 0.46
+    for cx, angle in zip(centres, angles):
+        radian = np.deg2rad(angle)
+        axes.add_patch(FancyArrow(
+            cx - length / 2 * np.cos(radian), -length / 2 * np.sin(radian),
+            length * np.cos(radian), length * np.sin(radian),
+            width=0.040, head_width=0.24, head_length=0.20,
+            length_includes_head=True, color=colour, zorder=4))
+
+        spin = '0.55' if mode == 'frozen' else colour
+        axes.annotate('', xy=(cx + 0.26, 0.52), xytext=(cx - 0.26, 0.52),
+                      annotation_clip=False,
+                      arrowprops=dict(arrowstyle='<|-|>', color=spin, lw=1.5,
+                                      mutation_scale=9,
+                                      connectionstyle='arc3,rad=-0.55'))
+        if mode == 'frozen':
+            axes.plot([cx - 0.12, cx + 0.12], [0.60, 0.84], color='#B54535',
+                      lw=2.2, zorder=6)
+            axes.plot([cx - 0.12, cx + 0.12], [0.84, 0.60], color='#B54535',
+                      lw=2.2, zorder=6)
+
+    if mode == 'warm':
+        axes.annotate('', xy=(0.20, -0.02), xytext=(-0.20, -0.02),
+                      arrowprops=dict(arrowstyle='<|-|>', color='#B54535',
+                                      lw=2.0, mutation_scale=10))
+        axes.text(0, -0.30, r'$k_BT$', fontsize=9, color='#B54535',
+                  ha='center', va='top', zorder=6)
+    elif mode == 'window':
+        axes.plot([0, 0], [-side / 2, side / 2], color='#8A6D1F', lw=2.4,
+                  zorder=5)
+
+
+def add_dipole_cartoons(figure, main, table: dict, window):
+    """Three cartoons above the energy axes, aligned to the temperature axis."""
+    orange, dark = '#C0552F', '#1A1A1A'
+    cold, warm = window
+    panels = (
+        (0.5 * (200 + cold), 'frozen', orange, f'below {cold:.0f} K',
+         'blocked at inherited random angles\n'
+         r'$\rightarrow$ no selection, attraction gone'),
+        (0.5 * (cold + warm), 'window', dark, f'{cold:.0f}-{warm:.0f} K',
+         'still re-sampling, picks head-to-tail\n'
+         r'$\rightarrow$ aggregates'),
+        (0.5 * (warm + 300), 'warm', orange, f'above {warm:.0f} K',
+         're-sampling, but the well is shallow\n'
+         r'$\rightarrow$ single phase'),
+    )
+    box = main.get_position()
+    width = 0.235
+    height = width * figure.get_figwidth() / figure.get_figheight()
+    for temperature, mode, colour, heading, caption in panels:
+        centre = box.x0 + (temperature - 200.0) / 100.0 * box.width
+        centre = min(max(centre, box.x0 + width / 2), box.x1 - width / 2)
+        axes = figure.add_axes([centre - width / 2, box.y1 + 0.088,
+                                width, height])
+        _dipole_cartoon(axes, mode, colour)
+        axes.set_title(heading, fontsize=11, fontweight='bold', pad=4,
+                       color=colour)
+        axes.text(0, -1.02, caption, fontsize=8.8, ha='center', va='top',
+                  color='0.25', transform=axes.transData)
+        figure.add_artist(plt.Line2D(
+            [centre, centre], [box.y1 + 0.080, box.y1],
+            color=colour, lw=1.0, ls=':', alpha=.7))
+
+
+def plot_pair_energies(table: dict, out: Path):
+    """One pair, signed energies, no phase diagram anywhere.
+
+    Negative binds.  Van der Waals falls monotonically on cooling because a
+    fixed joule energy divided by kBT grows; the dipolar term turns and rises
+    because Neel blocking removes the orientational re-sampling it is made of.
+    Their sum has a minimum, and the binding window opens around it.
+
+    The binding criterion is ONE chosen number, not a derived one: it is set so
+    the cold edge of the window coincides with the blocking temperature.  Where
+    the warm edge then lands is not chosen, and is the figure's only claim.
+    """
+    plt.rcParams.update({'font.family': 'Arial', 'font.size': 12,
+                         'axes.labelsize': 13.5, 'axes.linewidth': 1.6,
+                         'axes.grid': False, 'pdf.fonttype': 42})
+    grid = table['temperature_K']
+    lost, halved = table['bounds']['lost'], table['bounds']['halved']
+    blocking = table['blocking_temperature_K']
+    blue, orange, grey, dark, red = '#3C3C8C', '#C0552F', '0.45', '#1A1A1A', '#B54535'
+
+    criterion = float(np.interp(blocking, grid, lost['total']))
+    inside = grid[lost['total'] <= criterion]
+    warm = inside.max()
+
+    figure, (main, lower) = plt.subplots(
+        2, 1, figsize=(10.4, 11.2), sharex=True,
+        gridspec_kw={'height_ratios': [2.5, 1.0]})
+    for axes in (main, lower):
+        axes.axvspan(blocking, warm, color='#F4EAA2', alpha=.75, zorder=0)
+        axes.axvline(blocking, color='#C9A227', lw=2.0, zorder=1)
+
+    main.axhline(0, color='black', lw=1.0, zorder=2)
+    main.fill_between(grid, lost['dipolar'], halved['dipolar'], color=orange,
+                      alpha=.22, lw=0, zorder=2)
+    main.plot(grid, halved['dipolar'], color=orange, lw=1.6, ls=(0, (5, 2)),
+              zorder=3)
+    main.plot(grid, lost['dipolar'], color=orange, lw=3.2, zorder=4,
+              label=r'dipolar   $-(1-\lambda b^2)\,\ln\langle e^{-U_{dd}/k_BT}\rangle$')
+    main.plot(grid, table['vdw_kBT'], color=blue, lw=3.2, zorder=4,
+              label=r'van der Waals   $U_{vdW}/k_BT$')
+    main.plot(grid, np.full_like(grid, table['registration_kBT']), color=grey,
+              lw=2.4, zorder=3,
+              label=rf'registration   $+{table["registration_kBT"]:.2f}\,k_BT$'
+                    '  (pair value, exact here)')
+    main.fill_between(grid, lost['total'], halved['total'], color=dark,
+                      alpha=.16, lw=0, zorder=4)
+    main.plot(grid, halved['total'], color=dark, lw=1.8, ls=(0, (5, 2)),
+              zorder=5)
+    main.plot(grid, lost['total'], color=dark, lw=3.6, zorder=6,
+              label='total pair bond free energy')
+    main.axhline(criterion, color=red, lw=2.0, ls=(0, (6, 3)), zorder=5,
+                 label='binding criterion (chosen, see caption)')
+
+    # Everything above zero is empty, so the trend labels and their
+    # leaders live there and no annotation crosses another.
+    main.annotate('dipolar WEAKENS on cooling\n'
+                  '(blocking removes the re-sampling)',
+                  xy=(202.5, lost['dipolar'][0]), xytext=(206, 3.1),
+                  fontsize=10.5, color=orange, ha='left', va='center',
+                  arrowprops=dict(arrowstyle='->', color=orange, lw=1.5))
+    main.annotate('van der Waals STRENGTHENS on cooling\n'
+                  r'(fixed $U$ divided by a smaller $k_BT$)',
+                  xy=(210, float(np.interp(210, grid, table['vdw_kBT']))),
+                  xytext=(206, 1.0), fontsize=10.5, color=blue,
+                  ha='left', va='center',
+                  arrowprops=dict(arrowstyle='->', color=blue, lw=1.5))
+    main.text(.5 * (blocking + warm), 3.75,
+              f'bound  {blocking:.0f}-{warm:.0f} K', fontsize=12,
+              color='#8A6D1F', ha='center', va='center', fontweight='bold')
+    main.text(298, 2.55,
+              'dashed: moments frozen inside the bond\n'
+              r'($\lambda \approx 0.5$) - the pair never unbinds',
+              fontsize=10, color='0.3', ha='right', va='center')
+    main.set(ylabel=r'Bond free energy  ($k_BT$,  negative binds)',
+             ylim=(-8.8, 5.0))
+    main.legend(loc='lower left', bbox_to_anchor=(.01, .015),
+                frameon=False, fontsize=10.5)
+    main.set_title('One bond, its particles caged so they cannot tumble',
+                   loc='left', fontsize=12.5, fontweight='bold')
+
+    lower.plot(grid, table['blocked'], color=orange, lw=2.0, ls=(0, (5, 2)),
+               label='$b$')
+    lower.plot(grid, table['blocked_weight'], color=orange, lw=3.0,
+               label='$b^2$')
+    lower.axhline(0.5, color=grey, lw=1.0, ls=':')
+    lower.annotate(rf'$T_B$ = {blocking:.0f} K', xy=(blocking, .5),
+                   xytext=(blocking - 34, .70), fontsize=11, color='#8A6D1F',
+                   fontweight='bold',
+                   arrowprops=dict(arrowstyle='->', color='#C9A227', lw=1.6))
+    lower.set(xlabel='Temperature (K)', ylabel='Blocked fraction',
+              xlim=(200, 300), ylim=(0, 1.05))
+    lower.legend(loc='upper right', frameon=False, fontsize=10.5)
+    lower.set_title(f"Neel blocking at {table['dwell_s']:.0f} s dwell, "
+                    f"CV {table['size_cv'] * 100:.2f} %", loc='left',
+                    fontsize=11.5)
+
+    figure.subplots_adjust(left=.10, right=.975, top=.73, bottom=.06,
+                           hspace=.16)
+    add_dipole_cartoons(figure, main, table, (blocking, warm))
+    for extension in ('png', 'pdf'):
+        figure.savefig(out / f'pair_energy_vs_temperature.{extension}',
+                       dpi=300, bbox_inches='tight')
+    plt.close(figure)
+    return dict(criterion_kBT=criterion, cold_edge_K=blocking,
+                warm_edge_K=float(warm))
+
+
+def cooling_energy_table(energies: dict, dwell_s: float = 100.0,
+                         size_cv: float = 0.048480, tilt_deg: float = 15.65,
+                         coordination: int = 6,
+                         volume_fraction: float = SAMPLE_VOLUME_FRACTION,
+                         step_K: float = 1.0) -> dict:
+    """Signed bond free energy along a cooling sweep, negative = binding.
+
+    Everything is the self-consistent trajectory: the frozen dipolar bias is
+    inherited from wherever the moments were when they blocked, and where they
+    were is the lever rule applied to the cohesion one step earlier.  No
+    lambda, no f, and no chosen binding criterion -- the window is simply where
+    the lever rule puts a finite share of the particles in the dense phase.
+
+    The two bounds kept for the band are the extremes that closure chooses
+    between: nothing freezes in place (x = 0) and everything does (x = 1).
+    """
+    trajectory = self_consistent_cooling(
+        energies, dwell_s=dwell_s, size_cv=size_cv, tilt_deg=tilt_deg,
+        coordination=coordination, volume_fraction=volume_fraction,
+        start_K=320.0, stop_K=200.0, step_K=step_K)
+    trajectory = trajectory[::-1]                      # ascending in T
+    grid = np.array([r['temperature_K'] for r in trajectory])
+    inside = grid <= 300.0
+    grid = grid[inside]
+
+    def column(key):
+        return np.array([r[key] for r in trajectory])[inside]
+
+    registration = registration_cost_kBT(tilt_deg)
+    dipole, blocked = column('dipole_kBT'), column('blocked_weight')
+    annealed = (1.0 - blocked) * dipole
+    frozen = column('frozen_kBT')
+    ceiling = inherited_frozen_energy(grid, energies, lambda t: 1.0,
+                                      dwell_s, size_cv, coordination)
+    aggregated = column('aggregated_fraction')
+    window = grid[aggregated > 0.0]
+    return dict(
+        temperature_K=grid, vdw_kBT=-column('vdw_kBT'),
+        dipole_kBT=dipole, blocked=np.sqrt(blocked), blocked_weight=blocked,
+        aggregated_fraction=aggregated, registration_kBT=registration,
+        annealed_kBT=annealed,
+        dipolar_self=-(annealed + frozen),
+        dipolar_ceiling=-(annealed + ceiling['frozen_kBT']),
+        total_self=-(column('vdw_kBT') + annealed + frozen),
+        total_ceiling=-(column('vdw_kBT') + annealed
+                        + ceiling['frozen_kBT']),
+        epsilon_net_kBT=column('epsilon_kBT'),
+        frozen_kBT=frozen, frozen_ceiling_kBT=ceiling['frozen_kBT'],
+        window=(float(window.min()), float(window.max())) if window.size else None,
+        threshold_sum_kBT=(
+            float(np.interp(float(window.min()), grid,
+                            column('vdw_kBT') + annealed + frozen))
+            if window.size else np.nan),
+        blocking_temperature_K=float(np.interp(
+            0.5, np.sqrt(blocked)[::-1], grid[::-1])),
+        dwell_s=dwell_s, size_cv=size_cv, tilt_deg=tilt_deg,
+        coordination=coordination)
+
+
+def plot_cooling_energies(table: dict, out: Path):
+    """Three panels: the totals, the dipolar term split in two, and the switches.
+
+    The middle panel is the one that earns its place: it separates the part of
+    the dipolar attraction still being re-sampled, (1-b^2) D, from the part
+    inherited by bonds that have already frozen, E_frozen.  The self-consistent
+    E_frozen hugs zero while its ceiling climbs to 2.7 kBT, which is the whole
+    content of the closure -- the sweep picks the bottom of the available range
+    because the aggregate is never more than a small share of the sample.
+    """
+    plt.rcParams.update({'font.family': 'Arial', 'font.size': 12,
+                         'axes.labelsize': 13.5, 'axes.linewidth': 1.6,
+                         'axes.grid': False, 'pdf.fonttype': 42})
+    grid = table['temperature_K']
+    blue, orange, grey, dark = '#3C3C8C', '#C0552F', '0.45', '#1A1A1A'
+    cold, warm = table['window'] if table['window'] else (np.nan, np.nan)
+    blocking = table['blocking_temperature_K']
+
+    figure, (main, split, lower) = plt.subplots(
+        3, 1, figsize=(10.4, 13.6), sharex=True,
+        gridspec_kw={'height_ratios': [2.3, 1.15, 1.0]})
+    for axes in (main, split, lower):
+        axes.axvspan(cold, warm, color='#F4EAA2', alpha=.75, zorder=0)
+        axes.axvline(blocking, color='#C9A227', lw=2.0, ls=(0, (5, 2)), zorder=1)
+
+    # ---- (a) the two attractions and their sum ---------------------------
+    main.axhline(0, color='black', lw=1.0, zorder=2)
+    main.fill_between(grid, table['dipolar_self'], table['dipolar_ceiling'],
+                      color=orange, alpha=.20, lw=0, zorder=2)
+    main.plot(grid, table['dipolar_ceiling'], color=orange, lw=1.5,
+              ls=(0, (5, 2)), zorder=3)
+    main.plot(grid, table['dipolar_self'], color=orange, lw=3.2, zorder=4,
+              label=r'dipolar  $-[(1-b^2)D + E_{frozen}/k_BT]$')
+    main.plot(grid, table['vdw_kBT'], color=blue, lw=3.2, zorder=4,
+              label=r'van der Waals   $U_{vdW}/k_BT$')
+    level = -table['threshold_sum_kBT']
+    main.axhline(level, color='#B54535', lw=2.2, ls=(0, (6, 3)), zorder=3,
+                 label=rf'phase-separation threshold  ${level:.2f}\,k_BT$')
+    main.fill_between(grid, table['total_self'], table['total_ceiling'],
+                      color=dark, alpha=.14, lw=0, zorder=4)
+    main.plot(grid, table['total_ceiling'], color=dark, lw=1.6, ls=(0, (5, 2)),
+              zorder=5,
+              label='dashed: the same, if EVERY moment froze bonded')
+    main.plot(grid, table['total_self'], color=dark, lw=3.6, zorder=6,
+              label='total = van der Waals + dipolar')
+    main.annotate('dipolar WEAKENS on cooling\n(blocking removes the re-sampling)',
+                  xy=(202.5, table['dipolar_self'][0]), xytext=(206, 2.9),
+                  fontsize=10.5, color=orange, ha='left', va='center',
+                  arrowprops=dict(arrowstyle='->', color=orange, lw=1.5))
+    main.annotate('van der Waals STRENGTHENS on cooling\n'
+                  r'(fixed $U$ divided by a smaller $k_BT$)',
+                  xy=(210, float(np.interp(210, grid, table['vdw_kBT']))),
+                  xytext=(206, 0.8), fontsize=10.5, color=blue, ha='left',
+                  va='center',
+                  arrowprops=dict(arrowstyle='->', color=blue, lw=1.5))
+    main.text(.5 * (cold + warm), 2.9, f'two phases\n{cold:.0f}-{warm:.0f} K',
+              fontsize=12, color='#8A6D1F', ha='center', va='center',
+              fontweight='bold')
+    main.text(298, -0.9,
+              'the threshold carries the constant that used to be\n'
+              f"subtracted as registration ({table['registration_kBT']:.2f} "
+              r'$k_BT$); moving it changes nothing',
+              fontsize=9.5, color='#B54535', ha='right', va='center')
+    main.set(ylabel=r'Interaction free energy  ($k_BT$)', ylim=(-11.4, 4.2))
+    main.legend(loc='lower left', bbox_to_anchor=(.005, .005), frameon=False,
+                fontsize=10.5, ncol=2, columnspacing=2.4)
+    main.set_title('(a)  Total = the two attractions, nothing subtracted',
+                   loc='left', fontsize=12.5, fontweight='bold')
+
+    # ---- (b) the dipolar term split ---------------------------------------
+    split.axhline(0, color='black', lw=1.0, zorder=2)
+    split.plot(grid, table['annealed_kBT'], color=orange, lw=3.2, zorder=4,
+               label=r'$(1-b^2)\,D$   still being re-sampled')
+    split.fill_between(grid, table['frozen_kBT'], table['frozen_ceiling_kBT'],
+                       color=dark, alpha=.16, lw=0, zorder=2)
+    split.plot(grid, table['frozen_ceiling_kBT'], color=dark, lw=1.6,
+               ls=(0, (5, 2)), zorder=3,
+               label=r'$E_{frozen}/k_BT$   ceiling, if every moment froze bonded')
+    split.plot(grid, table['frozen_kBT'], color=dark, lw=3.2, zorder=5,
+               label=r'$E_{frozen}/k_BT$   self-consistent')
+    peak_frozen = float(np.max(table['frozen_kBT']))
+    split.annotate(f'self-consistent frozen term never exceeds '
+                   f'{peak_frozen:.3f} ' r'$k_BT$',
+                   xy=(228, float(np.interp(228, grid, table['frozen_kBT']))),
+                   xytext=(232, 1.45), fontsize=10, color=dark, ha='left',
+                   arrowprops=dict(arrowstyle='->', color=dark, lw=1.3))
+    split.set(ylabel=r'Contribution  ($k_BT$)', ylim=(-0.25, 5.9))
+    split.legend(loc='upper left', frameon=False, fontsize=10.5)
+    split.set_title('(b)  The dipolar term split: re-sampled vs inherited',
+                    loc='left', fontsize=12.5, fontweight='bold')
+
+    # ---- (c) the switches --------------------------------------------------
+    lower.plot(grid, table['blocked'], color=orange, lw=1.8, ls=(0, (5, 2)),
+               label='$b$  one moment blocked')
+    lower.plot(grid, table['blocked_weight'], color=orange, lw=3.0,
+               label='$b^2$  both blocked')
+    lower.fill_between(grid, 0, table['aggregated_fraction'], color=blue,
+                       alpha=.25, lw=0)
+    lower.plot(grid, table['aggregated_fraction'], color=blue, lw=3.0,
+               label='$x$  particles in the dense phase')
+    lower.annotate(rf'$T_B$ = {blocking:.0f} K', xy=(blocking, .52),
+                   xytext=(blocking - 36, .74), fontsize=11, color='#8A6D1F',
+                   fontweight='bold',
+                   arrowprops=dict(arrowstyle='->', color='#C9A227', lw=1.6))
+    peak = table['aggregated_fraction'].max()
+    lower.text(.5 * (cold + warm), peak + .06, f'peak {100 * peak:.0f} %',
+               fontsize=10.5, color=blue, ha='center', va='bottom')
+    lower.set(xlabel='Temperature (K)', ylabel='Fraction',
+              xlim=(200, 300), ylim=(0, 1.05))
+    lower.legend(loc='upper right', frameon=False, fontsize=10.5)
+    lower.set_title(f"(c)  Neel blocking at {table['dwell_s']:.0f} s dwell, "
+                    f"CV {table['size_cv'] * 100:.2f} %, and the aggregated "
+                    "fraction it produces", loc='left', fontsize=12.5,
+                    fontweight='bold')
+
+    figure.subplots_adjust(left=.10, right=.975, top=.745, bottom=.05,
+                           hspace=.17)
+    add_dipole_cartoons(figure, main, table, (cold, warm))
+    for extension in ('png', 'pdf'):
+        figure.savefig(out / f'cooling_energy_vs_temperature.{extension}',
+                       dpi=300, bbox_inches='tight')
+    plt.close(figure)
+    return dict(window=table['window'], peak_aggregated=float(peak),
+                peak_frozen_kBT=peak_frozen,
+                blocking_temperature_K=blocking)
+
+
+def plot_two_energies(table: dict, out: Path, blocking_K: float = 250.0,
+                      show_threshold: bool = True):
+    """Signed energies throughout, over the split and the switches.
+
+    Everything that is an energy is plotted with its own sign, negative for
+    binding, in panels (a) and (b) alike -- an earlier version drew panel (b)
+    as positive magnitudes and the two panels could not be read against each
+    other.  The panel heights are set from the y-ranges so that a kBT is the
+    same height in both.
+
+    `blocking_K` is the measured blocking temperature, 250 K, which is also
+    the calibration input: K_cubic is set so tau_N = 100 s at 250 K for the
+    nominal 16 nm cube.  The ensemble is half blocked a little lower, at
+    244 K, for two definitional reasons -- b is the survival probability
+    exp(-t/tau_N), which is 1/e rather than 1/2 at tau_N = t, and the
+    lognormal is parameterised by the MEAN diameter, so the median particle is
+    slightly smaller.  Both are marked so neither is mistaken for the other.
+    """
+    plt.rcParams.update({'font.family': 'Arial', 'font.size': 12,
+                         'axes.labelsize': 13.5, 'axes.linewidth': 1.6,
+                         'axes.grid': False, 'pdf.fonttype': 42})
+    grid = table['temperature_K']
+    blue, orange, dark = '#3C3C8C', '#C0552F', '#1A1A1A'
+    red = '#B54535'
+    cold, warm = table['window'] if table['window'] else (np.nan, np.nan)
+    blocking = float(blocking_K)
+    modelled = table['blocking_temperature_K']
+
+    # The panel heights follow the y-ranges so a kBT is the same height in
+    # both; at z = 1 the ceiling curve runs to -7.7 and would be clipped by
+    # a fixed range.
+    floor = min(float(np.min(-table['annealed_kBT'])),
+                float(np.min(-table['frozen_ceiling_kBT'])))
+    top_span = (min(-8.1, float(np.min(table['total_self'])) - 0.8), 2.7)
+    split_span = (floor - 0.5, 0.4)
+    heights = [top_span[1] - top_span[0], split_span[1] - split_span[0], 5.0]
+    figure, (main, split, lower) = plt.subplots(
+        3, 1, figsize=(10.4, 15.2), sharex=True,
+        gridspec_kw={'height_ratios': heights})
+    for axes in (main, split, lower):
+        axes.axvspan(cold, warm, color='#F4EAA2', alpha=.75, zorder=0)
+        axes.axvline(blocking, color='#C9A227', lw=2.0, ls=(0, (5, 2)), zorder=1)
+
+    # ---- (a) the two attractions, their sum, and the level it must clear --
+    main.plot(grid, table['dipolar_self'], color=orange, lw=3.4, zorder=4,
+              label=r'dipolar   $-[(1-b^2)D + E_{frozen}/k_BT]$')
+    main.plot(grid, table['vdw_kBT'], color=blue, lw=3.4, zorder=4,
+              label=r'van der Waals   $U_{vdW}/k_BT$')
+    if show_threshold:
+        level = -table['threshold_sum_kBT']
+        main.axhline(level, color=red, lw=2.2, ls=(0, (6, 3)), zorder=3,
+                     label=rf'aggregation threshold   ${level:.2f}\,k_BT$')
+    main.plot(grid, table['total_self'], color=dark, lw=3.8, zorder=6,
+              label='total = van der Waals + dipolar')
+    main.annotate('dipolar WEAKENS on cooling\n'
+                  '(blocking removes the re-sampling)',
+                  xy=(203, table['dipolar_self'][0]), xytext=(211, -0.30),
+                  fontsize=11.5, color=orange, ha='left', va='center',
+                  arrowprops=dict(arrowstyle='->', color=orange, lw=1.6))
+    main.annotate('van der Waals STRENGTHENS on cooling',
+                  xy=(213, float(np.interp(213, grid, table['vdw_kBT']))),
+                  xytext=(237, -1.25), fontsize=11.5, color=blue, ha='left',
+                  va='center',
+                  arrowprops=dict(arrowstyle='->', color=blue, lw=1.6))
+    main.text(.5 * (cold + warm), -6.35, f'{cold:.0f}-{warm:.0f} K',
+              fontsize=12.5, color='#8A6D1F', ha='center', va='center',
+              fontweight='bold')
+    main.text(blocking - 1.6, -3.4,
+              rf'$T_B$ = {blocking:.0f} K (measured, calibration)', rotation=90,
+              fontsize=11.5, color='#8A6D1F', ha='right', va='center',
+              fontweight='bold')
+    main.text(298, -0.30, f'ensemble half blocked ($b$ = 1/2) at {modelled:.0f} K',
+              fontsize=10, color='0.4', ha='right', va='center')
+    main.set(ylabel=r'Interaction free energy  ($k_BT$)', ylim=top_span)
+    main.legend(loc='upper left', bbox_to_anchor=(.005, .995),
+                frameon=False, fontsize=11, ncol=2, columnspacing=2.2)
+    main.set_title(f"(a)  The two attractions and their sum   "
+                   f"(coordination z = {table['coordination']})",
+                   loc='left', fontsize=12.5, fontweight='bold')
+
+    # ---- (b) where the dipolar term goes, same sign convention ------------
+    split.axhline(0, color='black', lw=1.0, zorder=2)
+    split.plot(grid, -table['annealed_kBT'], color=orange, lw=3.2, zorder=4,
+               label=r'$-(1-b^2)\,D$   still being re-sampled')
+    split.fill_between(grid, -table['frozen_kBT'], -table['frozen_ceiling_kBT'],
+                       color=dark, alpha=.16, lw=0, zorder=2)
+    split.plot(grid, -table['frozen_ceiling_kBT'], color=dark, lw=1.6,
+               ls=(0, (5, 2)), zorder=3,
+               label=r'$-E_{frozen}/k_BT$   ceiling, if every moment froze bonded')
+    split.plot(grid, -table['frozen_kBT'], color=dark, lw=3.2, zorder=5,
+               label=r'$-E_{frozen}/k_BT$   self-consistent')
+    peak_frozen = float(np.max(table['frozen_kBT']))
+    split.annotate('the self-consistent frozen term never goes below '
+                   f'{-peak_frozen:.3f} ' r'$k_BT$',
+                   xy=(226, -float(np.interp(226, grid, table['frozen_kBT']))),
+                   xytext=(232, -1.45), fontsize=10, color=dark, ha='left',
+                   arrowprops=dict(arrowstyle='->', color=dark, lw=1.3))
+    split.set(ylabel=r'Contribution  ($k_BT$)', ylim=split_span)
+    split.legend(loc='lower left', bbox_to_anchor=(.005, .01), frameon=False,
+                 fontsize=10.5)
+    split.set_title('(b)  The dipolar term split: re-sampled vs inherited',
+                    loc='left', fontsize=12.5, fontweight='bold')
+
+    # ---- (c) the switches --------------------------------------------------
+    lower.plot(grid, table['blocked'], color=orange, lw=1.8, ls=(0, (5, 2)),
+               label='$b$  one moment blocked')
+    lower.plot(grid, table['blocked_weight'], color=orange, lw=3.0,
+               label='$b^2$  both blocked')
+    lower.fill_between(grid, 0, table['aggregated_fraction'], color=blue,
+                       alpha=.25, lw=0)
+    lower.plot(grid, table['aggregated_fraction'], color=blue, lw=3.0,
+               label='$x$  particles in the dense phase')
+    peak = table['aggregated_fraction'].max()
+    lower.text(.5 * (cold + warm), peak + .06, f'peak {100 * peak:.0f} %',
+               fontsize=10.5, color=blue, ha='center', va='bottom')
+    lower.set(xlabel='Temperature (K)', ylabel='Fraction',
+              xlim=(200, 300), ylim=(0, 1.05))
+    lower.legend(loc='upper right', frameon=False, fontsize=10.5)
+    lower.set_title(f"(c)  Neel blocking at {table['dwell_s']:.0f} s dwell, "
+                    f"CV {table['size_cv'] * 100:.2f} %, and the aggregated "
+                    "fraction it produces", loc='left', fontsize=12.5,
+                    fontweight='bold')
+
+    figure.subplots_adjust(left=.10, right=.975, top=.775, bottom=.045,
+                           hspace=.15)
+    add_dipole_cartoons(figure, main, table, (cold, warm))
+    for extension in ('png', 'pdf'):
+        figure.savefig(out / f'two_energies_z{table["coordination"]}.{extension}',
+                       dpi=300, bbox_inches='tight')
+    plt.close(figure)
+
+
+def energy_decomposition(energies: dict, dwell_s: float, size_cv: float,
+                         tilt_deg: float = 15.5,
+                         grid=np.arange(200.0, 300.01, 0.5),
+                         loss_fraction: float = 1.0) -> dict:
+    """Every term of eps(T) on one temperature grid, ready to plot.
+
+    Separates the two things cooling does, because they point opposite ways:
+    `vdw_kBT` and `dipole_kBT` are the well depths, which grow monotonically
+    on cooling simply because they are fixed joule energies divided by kBT,
+    while `blocked_weight` is the fraction of that dipolar depth the
+    condensate can no longer collect.
+    """
+    rows = [dense_phase_epsilon(float(t), energies, dwell_s, size_cv,
+                                loss_fraction)
+            for t in grid]
+    cost = registration_cost_kBT(tilt_deg)
+    collected = np.array([(1.0 - loss_fraction * r['blocked_weight'])
+                          * r['dipole_kBT'] for r in rows])
+    vdw = np.array([r['vdw_kBT'] for r in rows])
+    return dict(temperature_K=np.asarray(grid, float), rows=rows,
+                vdw_kBT=vdw,
+                dipole_kBT=np.array([r['dipole_kBT'] for r in rows]),
+                collected_kBT=collected,
+                blocked=np.array([r['blocked_fraction'] for r in rows]),
+                blocked_weight=np.array([r['blocked_weight'] for r in rows]),
+                net_kBT=vdw + collected - cost,
+                net_unfrozen_kBT=vdw
+                + np.array([r['dipole_kBT'] for r in rows]) - cost,
+                registration_kBT=cost, tilt_deg=tilt_deg,
+                dwell_s=dwell_s, size_cv=size_cv,
+                loss_fraction=loss_fraction)
+
+
+def plot_energy_vs_temperature(decomposition: dict, threshold_kBT: float,
+                               out: Path, observed=(250.0, 270.0)):
+    """Three panels on a shared temperature axis: terms, freeze, net.
+
+    Lines only.  An earlier version stacked translucent areas for the three
+    terms and they were unreadable where they overlapped; the mechanism is a
+    solid curve peeling away from a dashed one, which needs no fill at all.
+    The single filled region is the sliver where the net clears the threshold.
+
+    Sign convention throughout: POSITIVE binds.  So the van der Waals curve is
+    -U_vdW/kBT, the dipolar curve is +ln<exp(-U_dd/kBT)> -- attractive despite
+    <U_dd> being exactly zero, because exp is convex -- and the registration
+    entropy is the one negative term.
+    """
+    plt.rcParams.update({'font.family': 'Arial', 'font.size': 12,
+                         'axes.labelsize': 13, 'axes.linewidth': 1.6,
+                         'axes.grid': False, 'pdf.fonttype': 42})
+    grid = decomposition['temperature_K']
+    cost = decomposition['registration_kBT']
+    net = decomposition['net_kBT']
+    blue, orange, grey, dark = '#3C3C8C', '#C0552F', '0.45', '#1A1A1A'
+
+    figure, panels = plt.subplots(3, 1, figsize=(8.8, 11.6), sharex=True,
+                                  gridspec_kw={'height_ratios': [1.15, .7, 1.05]})
+    terms, freeze, result = panels
+    for axes in panels:
+        for edge in observed:
+            axes.axvline(edge, color='#C9A227', lw=1.4, ls=(0, (4, 3)),
+                         zorder=1)
+
+    # (a) every term of eps, signed, as lines
+    terms.axhline(0, color='black', lw=1.0, zorder=2)
+    terms.plot(grid, decomposition['dipole_kBT'], color=orange, lw=2.0,
+               ls=(0, (5, 2)), zorder=3,
+               label=r'dipolar if free to re-sample   $+\ln\langle e^{-U_{dd}/k_BT}\rangle$')
+    terms.plot(grid, decomposition['collected_kBT'], color=orange, lw=3.4,
+               zorder=5,
+               label=r'dipolar actually collected   $(1-b^2)\times$ the above')
+    terms.plot(grid, decomposition['vdw_kBT'], color=blue, lw=3.4, zorder=4,
+               label=r'van der Waals   $-U_{vdW}/k_BT$')
+    terms.plot(grid, np.full_like(grid, -cost), color=grey, lw=3.4, zorder=4,
+               label=rf'registration entropy   $-{cost:.2f}\,k_BT$ '
+                     rf'({decomposition["tilt_deg"]:g}$\degree$ cone)')
+    terms.annotate('freezing peels the solid curve\n'
+                   'away from the dashed one:\n'
+                   'that gap is the whole mechanism',
+                   xy=(232, 3.55), xytext=(244, -2.3), fontsize=10.5,
+                   color=orange, ha='left',
+                   arrowprops=dict(arrowstyle='->', color=orange, lw=1.4,
+                                   connectionstyle='arc3,rad=-.25'))
+    terms.set(ylabel=r'Contribution to $\epsilon$  ($k_BT$)', ylim=(-5.6, 8.4))
+    terms.legend(loc='lower left', frameon=False, fontsize=10)
+    terms.set_title('(a)  The four terms.  Positive binds; '
+                    r'$\langle U_{dd}\rangle$ is exactly zero',
+                    loc='left', fontsize=12.5, fontweight='bold')
+
+    # (b) the only term that points the other way
+    freeze.plot(grid, decomposition['blocked_weight'], color=orange, lw=3.4,
+                zorder=4, label=r'$b^2$   both moments blocked')
+    freeze.plot(grid, decomposition['blocked'], color=orange, lw=2.0,
+                ls=(0, (5, 2)), zorder=3, label=r'$b$   one moment blocked')
+    freeze.set(ylabel='Blocked fraction', ylim=(0, 1.06))
+    freeze.legend(loc='upper right', frameon=False, fontsize=10)
+    freeze.set_title(f"(b)  Néel freezing at {decomposition['dwell_s']:.0f} s "
+                     f"dwell, CV {decomposition['size_cv'] * 100:.2f} %",
+                     loc='left', fontsize=12.5, fontweight='bold')
+
+    # (c) the sum, against the threshold
+    result.plot(grid, decomposition['net_unfrozen_kBT'], color=grey, lw=2.0,
+                ls=(0, (2, 2)), zorder=3,
+                label='net if nothing froze (ordinary colloid)')
+    result.axhline(threshold_kBT, color='#B54535', lw=2.2, ls=(0, (6, 3)),
+                   zorder=4,
+                   label=rf'condensation threshold  {threshold_kBT:.2f} $k_BT$')
+    result.fill_between(grid, threshold_kBT, net, where=net > threshold_kBT,
+                        color='#B54535', alpha=.30, lw=0, zorder=2,
+                        interpolate=True)
+    result.plot(grid, net, color=dark, lw=3.6, zorder=5,
+                label=r'net cohesion  $\epsilon$  (sum of panel a)')
+
+    inside = net > threshold_kBT
+    if inside.any():
+        edges = grid[inside]
+        for edge in (edges.min(), edges.max()):
+            result.plot([edge, edge], [0, threshold_kBT], color='#B54535',
+                        lw=1.2, ls=':', zorder=4)
+        result.annotate('condensing\n'
+                        f'{edges.min():.0f}-{edges.max():.0f} K',
+                        xy=(.5 * (edges.min() + edges.max()), 1.95),
+                        fontsize=10.5, color='#B54535', fontweight='bold',
+                        ha='center')
+        result.annotate('peak clears the threshold by only '
+                        f'{net.max() - threshold_kBT:.3f} '
+                        r'$k_BT$', xy=(203, 3.62), fontsize=10,
+                        color='0.3', ha='left')
+    result.set(xlabel='Temperature (K)',
+               ylabel=r'Net cohesion  $\epsilon$  ($k_BT$ per bond)',
+               xlim=(200, 300), ylim=(0, 6.8))
+    result.legend(loc='lower right', frameon=False, fontsize=10)
+    result.set_title('(c)  Sum: non-monotonic, crosses the threshold twice',
+                     loc='left', fontsize=12.5, fontweight='bold')
+
+    figure.suptitle('Where the cooling window comes from\n'
+                    'dashed gold lines = observed aggregation window, '
+                    '250-270 K', fontsize=13.5)
+    figure.subplots_adjust(left=.11, right=.97, top=.92, bottom=.06, hspace=.17)
+    for extension in ('png', 'pdf'):
+        figure.savefig(out / f'energy_vs_temperature.{extension}', dpi=300,
+                       bbox_inches='tight')
+    plt.close(figure)
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dwell-s', type=float, default=150.0)
@@ -650,6 +1637,11 @@ def main() -> None:
     fit = fit_size_cv(SAMPLE_VOLUME_FRACTION, 250.0, 270.0, 100.0,
                       pair_energies('converged'))
     plot_fitted_diagram(fit, out)
+    decomposition = energy_decomposition(pair_energies('converged'),
+                                         fit['dwell_s'], fit['size_cv'],
+                                         arguments.tilt_deg)
+    plot_energy_vs_temperature(decomposition,
+                               fit['epsilon_threshold_kBT'], out)
     (out / 'fit.json').write_text(json.dumps(
         {k: (float(v) if isinstance(v, (int, float, np.floating)) else None)
          for k, v in fit.items() if not isinstance(v, np.ndarray)},

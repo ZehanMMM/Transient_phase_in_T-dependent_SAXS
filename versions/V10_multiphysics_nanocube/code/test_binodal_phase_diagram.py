@@ -244,5 +244,362 @@ class FitTests(unittest.TestCase):
                 self.assertGreater(width, floor)
 
 
+class DecompositionTests(unittest.TestCase):
+    """The plotted budget must be the same eps the binodal is built from."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.energies = bpd.pair_energies('converged')
+
+    def test_parts_sum_to_the_net_cohesion(self):
+        grid = np.arange(210.0, 290.1, 10.0)
+        parts = bpd.energy_decomposition(self.energies, 100.0, 0.0485, 15.5,
+                                         grid)
+        rebuilt = (parts['vdw_kBT'] + parts['collected_kBT']
+                   - parts['registration_kBT'])
+        self.assertTrue(np.allclose(parts['net_kBT'], rebuilt, atol=1e-12))
+        for row, collected in zip(parts['rows'], parts['collected_kBT']):
+            self.assertAlmostEqual(row['epsilon_kBT'],
+                                   row['vdw_kBT'] + collected, places=12)
+
+    def test_monotone_inputs_give_a_non_monotone_net(self):
+        """The whole mechanism in one test: two monotone terms, one peak."""
+        grid = np.arange(200.0, 300.1, 2.0)
+        parts = bpd.energy_decomposition(self.energies, 100.0, 0.0485, 15.5,
+                                         grid)
+        # cooling deepens both wells and freezes the moments, without exception
+        for key in ('vdw_kBT', 'dipole_kBT', 'blocked_weight'):
+            self.assertTrue(np.all(np.diff(parts[key]) < 0), key)
+        # yet what the condensate collects turns over inside the window
+        peak = parts['temperature_K'][int(np.argmax(parts['net_kBT']))]
+        self.assertGreater(peak, 250.0)
+        self.assertLess(peak, 270.0)
+        self.assertLess(parts['net_kBT'][0], parts['net_kBT'].max())
+        self.assertLess(parts['net_kBT'][-1], parts['net_kBT'].max())
+
+
+class LossFractionTests(unittest.TestCase):
+    """What a bond keeps when its moments freeze, and what the data allows."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.energies = bpd.pair_energies('converged')
+
+    def test_parallel_moments_are_exactly_neutral_on_a_face_bond(self):
+        """Magic angle: (s.n)^2 = 1/3 for a <100> bond, so U_dd vanishes.
+
+        Worth pinning because it is easy to assume the aligned state is the
+        attractive one.  It is not -- the attractive states are head-to-tail.
+        """
+        direction = np.asarray(bpd.LINKS['face'], float)
+        distance = geometry.center_distance_at_gap_m(
+            direction, bpd.SURFACE_GAP_NM * 1e-9, geometry.PARAMS)
+        table, _, axes, _ = geometry.easy_axis_pair_energies_J(
+            distance * direction, geometry.PARAMS)
+        matrix = np.asarray(table).reshape(8, 8)
+        self.assertTrue(np.allclose(np.diag(matrix), 0.0, atol=1e-30))
+        deepest = np.unravel_index(int(np.argmin(matrix)), matrix.shape)
+        along = float((axes[deepest[0]] @ direction)
+                      * (axes[deepest[1]] @ direction))
+        self.assertGreater(along, 0.0)          # head-to-tail, not opposed
+        self.assertAlmostEqual(float(axes[deepest[0]] @ axes[deepest[1]]),
+                               -1.0 / 3.0, places=9)
+
+    def test_frustration_collapses_what_a_frozen_bond_keeps(self):
+        """One moment cannot be deepest for six bonds at once."""
+        kept = [bpd.frustrated_quench_kBT(250.0, z) for z in (1, 2, 4, 6)]
+        self.assertTrue(all(a > b for a, b in zip(kept, kept[1:])))
+        self.assertAlmostEqual(kept[0], 7.51, delta=0.02)
+        self.assertAlmostEqual(kept[-1], 2.64, delta=0.02)
+        self.assertTrue(all(value > 0.0 for value in kept))
+
+    def test_the_quench_is_exhaustive_and_therefore_reproducible(self):
+        self.assertEqual(bpd.frustrated_quench_kBT(250.0, 5),
+                         bpd.frustrated_quench_kBT(250.0, 5))
+        with self.assertRaises(ValueError):
+            bpd.frustrated_quench_kBT(250.0, 7)
+
+    def test_retained_share_is_nearly_temperature_independent(self):
+        """Why lambda can be a constant rather than a function of T."""
+        shares = [bpd.frustrated_quench_kBT(t, 6) / bpd.dipolar_mayer_term(
+            t, self.energies) for t in (200.0, 250.0, 300.0)]
+        for share in shares:
+            self.assertGreater(share, 0.43)
+            self.assertLess(share, 0.50)
+        self.assertLess(max(shares) - min(shares), 0.07)
+
+    def test_lambda_spans_one_down_to_a_half_and_never_inverts(self):
+        previous = 1.0
+        for f in (0.0, 0.07, 0.21, 0.42, 1.0):
+            lam = bpd.loss_fraction(250.0, self.energies, f, 6)
+            self.assertLessEqual(lam, previous + 1e-12)
+            previous = lam
+        self.assertEqual(bpd.loss_fraction(250.0, self.energies, 0.0), 1.0)
+        self.assertAlmostEqual(bpd.loss_fraction(250.0, self.energies, 1.0, 6),
+                               0.532, delta=0.005)
+        for bad in (-0.1, 1.1):
+            with self.assertRaises(ValueError):
+                bpd.loss_fraction(250.0, self.energies, bad)
+
+    def test_a_frozen_bond_keeps_a_floor_rather_than_nothing(self):
+        """lambda < 1 leaves (1-lambda)*D behind; it is never repulsive."""
+        for lam in (1.0, 0.9, 0.53):
+            terms = bpd.dense_phase_epsilon(250.0, self.energies, 100.0, 0.05,
+                                            lam)
+            floor = terms['epsilon_frozen_kBT'] - terms['vdw_kBT']
+            self.assertAlmostEqual(floor, (1.0 - lam) * terms['dipole_kBT'],
+                                   places=12)
+            self.assertGreaterEqual(floor, -1e-12)
+
+    def test_the_observed_lower_edge_rules_out_mostly_correlated_freezing(self):
+        """f >~ 0.3 cannot put the lower edge at 250 K, whatever CV is.
+
+        This is the quantitative constraint on where the moments freeze: with
+        lambda = 0.53 (everything freezing inside the aggregate) the coldest
+        reachable edge is about 244 K, well above the observed value.
+        """
+        common = dict(dwell_s=100.0, energies=self.energies,
+                      threshold_kBT=2.844, grid_step_K=2.0)
+        keep = bpd.fit_size_cv(bpd.SAMPLE_VOLUME_FRACTION, 250.0, 270.0,
+                               loss_fraction=1.0, **common)
+        self.assertIsNotNone(keep)
+        self.assertAlmostEqual(keep['size_cv'], 0.0485, delta=0.006)
+        self.assertIsNone(bpd.fit_size_cv(bpd.SAMPLE_VOLUME_FRACTION, 250.0,
+                                          270.0, loss_fraction=0.53, **common))
+
+
+class OrientationalBookkeepingTests(unittest.TestCase):
+    """Per-bond vs per-particle counting of the same orientational entropy.
+
+    These pin the inconsistency rather than hide it: the cohesion charges the
+    isolated-pair cost on every one of six bonds, and that is 3.6x more
+    orientational entropy than a single particle orientation can actually owe.
+    """
+
+    def test_the_pair_limit_reproduces_the_analytic_cost(self):
+        pair = bpd.orientational_cost_kBT(15.5, 1)
+        self.assertAlmostEqual(pair['per_bond_kBT'],
+                               bpd.registration_cost_kBT(15.5), delta=0.05)
+        self.assertAlmostEqual(abs(pair['surplus_per_bond_kBT']), 0.0,
+                               delta=0.05)
+        self.assertAlmostEqual(pair['allowed_fraction'],
+                               6.0 * (1 - np.cos(np.deg2rad(15.5))) / 2.0,
+                               delta=0.002)
+
+    def test_the_per_particle_cost_saturates_by_the_second_neighbour(self):
+        """Two non-collinear bonds already lock all three rotational axes."""
+        costs = [bpd.orientational_cost_kBT(15.5, z)['per_particle_kBT']
+                 for z in (1, 2, 3, 6)]
+        self.assertLess(costs[0], costs[1])                  # 1 -> 2 costs
+        self.assertLess(costs[1], costs[2] + 1e-9)
+        self.assertAlmostEqual(costs[2], costs[3], places=9)  # 3 == 6, saturated
+        self.assertAlmostEqual(costs[3], 3.57, delta=0.05)
+        self.assertLess(costs[3] - costs[1], 0.2)             # 2 is nearly there
+
+    def test_the_per_bond_share_falls_as_one_over_coordination(self):
+        saturated = bpd.orientational_cost_kBT(15.5, 6)['per_particle_kBT']
+        for z in (3, 6):
+            share = bpd.orientational_cost_kBT(15.5, z)['per_bond_kBT']
+            self.assertAlmostEqual(share, 2.0 * saturated / z, places=9)
+        self.assertAlmostEqual(bpd.orientational_cost_kBT(15.5, 6)['per_bond_kBT'],
+                               1.19, delta=0.03)
+
+    def test_orientation_explains_only_a_quarter_of_the_fitted_cost(self):
+        """The rest must scale per contact -- ligands, not geometry.
+
+        This is why the fitted-vs-geometric tilt agreement is NOT an
+        independent check: both sides used the pair bookkeeping.
+        """
+        cage = bpd.orientational_cost_kBT(15.5, 6)
+        self.assertAlmostEqual(cage['surplus_per_bond_kBT'], 3.24, delta=0.05)
+        explained = cage['per_bond_kBT'] / bpd.registration_cost_kBT(15.5)
+        self.assertLess(explained, 0.30)
+        self.assertGreater(explained, 0.24)
+
+    def test_it_is_seeded_and_guards_its_input(self):
+        self.assertEqual(bpd.orientational_cost_kBT(15.5, 4),
+                         bpd.orientational_cost_kBT(15.5, 4))
+        for bad in (0, 7):
+            with self.assertRaises(ValueError):
+                bpd.orientational_cost_kBT(15.5, bad)
+
+
+class LeverRuleTests(unittest.TestCase):
+    """Volume share of the dense phase vs particle share -- not the same number.
+
+    Conflating them produced a bogus "at most 6.7 % of particles can be in the
+    aggregate" bound earlier in this project.  The volume share really is
+    capped at phi / phi_dense; the particle share is not capped at all.
+    """
+
+    def test_particle_share_runs_to_one_while_volume_share_stays_small(self):
+        phi, dense = bpd.SAMPLE_VOLUME_FRACTION, 0.31
+        for dilute in (0.02, 0.01, 1e-4, 0.0):
+            volume_share = (phi - dilute) / (dense - dilute)
+            particle_share = dense * volume_share / phi
+            self.assertLessEqual(volume_share, phi / dense + 1e-9)
+            self.assertLessEqual(particle_share, 1.0 + 1e-9)
+        # the deep-quench limit: every particle in a dense phase occupying
+        # only phi / phi_dense of the volume
+        self.assertAlmostEqual(phi / dense, 0.0675, delta=0.002)
+        self.assertAlmostEqual(dense * (phi / (dense - 0.0)) / phi, 1.0,
+                               places=9)
+
+    def test_outside_coexistence_nothing_is_aggregated(self):
+        self.assertEqual(bpd.aggregated_particle_fraction(0.5), 0.0)
+        self.assertEqual(bpd.aggregated_particle_fraction(1.0), 0.0)
+
+    def test_inside_the_dome_the_share_is_finite_and_bounded(self):
+        share = bpd.aggregated_particle_fraction(2.9)
+        self.assertGreater(share, 0.0)
+        self.assertLess(share, 1.0)
+
+
+class InheritedFrozenEnergyTests(unittest.TestCase):
+    """The history integral that replaced the scalar lambda."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.energies = bpd.pair_energies('converged')
+        cls.grid = np.arange(200.0, 300.1, 10.0)
+
+    def test_uniform_freezing_contributes_exactly_nothing(self):
+        """Every row of U sums to zero, so an unbiased frozen moment is neutral."""
+        table = bpd.inherited_frozen_energy(self.grid, self.energies,
+                                            lambda t: 0.0, step_K=5.0)
+        self.assertTrue(np.allclose(table['frozen_kBT'], 0.0, atol=1e-12))
+        self.assertTrue(np.allclose(table['frozen_energy_J'], 0.0, atol=1e-30))
+
+    def test_blocked_weight_matches_the_accurate_quadrature(self):
+        """b^2 must come from `neel_blocked_fraction`, not the coarse grid.
+
+        The inherited lognormal grid is ~30 % out here; this pins the fix.
+        """
+        table = bpd.inherited_frozen_energy(self.grid, self.energies,
+                                            lambda t: 0.0, step_K=0.5)
+        for temperature, value in zip(self.grid, table['blocked_weight']):
+            reference = bpd.neel_blocked_fraction(float(temperature), 100.0,
+                                                  0.048480) ** 2
+            self.assertAlmostEqual(value, reference, places=4)
+
+    def test_the_ceiling_agrees_with_the_scalar_lambda_it_replaced(self):
+        """At x = 1 the history integral must reproduce b^2 (1-lambda) D."""
+        table = bpd.inherited_frozen_energy(self.grid, self.energies,
+                                            lambda t: 1.0, step_K=0.5)
+        for temperature, value in zip(self.grid, table['frozen_kBT']):
+            terms = bpd.dense_phase_epsilon(float(temperature), self.energies,
+                                            100.0, 0.048480)
+            lam = bpd.loss_fraction(float(temperature), self.energies, 1.0, 6)
+            scalar = terms['blocked_weight'] * (1.0 - lam) * terms['dipole_kBT']
+            self.assertAlmostEqual(value, scalar, delta=0.02 + 0.05 * scalar)
+
+    def test_the_frozen_energy_only_accumulates_on_cooling(self):
+        table = bpd.inherited_frozen_energy(self.grid, self.energies,
+                                            lambda t: 1.0, step_K=1.0)
+        joules = table['frozen_energy_J']
+        self.assertTrue(np.all(np.diff(joules) >= -1e-30))   # rises towards 0
+        self.assertLessEqual(joules[-1], 0.0)                # attractive
+        # At the warm end only the 0.8 % of bonds already blocked carry
+        # anything, and what they carry is b^2 Q_6 -- small, but not zero.
+        warm = table['frozen_kBT'][-1]
+        expected = (bpd.neel_blocked_fraction(300.0, 100.0, 0.048480) ** 2
+                    * bpd.frustrated_quench_kBT(300.0, 6))
+        self.assertLess(warm, 0.05)
+        self.assertAlmostEqual(warm, expected, delta=0.25 * expected)
+
+    def test_what_a_frozen_bond_keeps_is_a_fixed_energy(self):
+        """Q_z(T) T is constant, so the inherited term scales like 1/T."""
+        product = [bpd.frustrated_quench_kBT(t, 6) * t
+                   for t in (200.0, 250.0, 300.0)]
+        self.assertLess(max(product) / min(product) - 1.0, 0.01)
+        # at z = 1 the ground state is less isolated and it drifts more
+        single = [bpd.frustrated_quench_kBT(t, 1) * t
+                  for t in (200.0, 250.0, 300.0)]
+        self.assertGreater(max(single) / min(single) - 1.0, 0.02)
+
+
+class SelfConsistentCoolingTests(unittest.TestCase):
+    """The closure: where the moments froze is decided by the model itself."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.energies = bpd.pair_energies('converged')
+
+    def sweep(self, **kwargs):
+        return bpd.self_consistent_cooling(self.energies, step_K=5.0, **kwargs)
+
+    def test_the_sweep_is_re_entrant_at_the_fitted_geometry(self):
+        window = [r['temperature_K'] for r in self.sweep(tilt_deg=15.65)
+                  if r['two_phase']]
+        self.assertTrue(window)
+        self.assertGreater(min(window), 200.0)      # it really does redissolve
+        self.assertLess(max(window), 300.0)         # and is single-phase warm
+        self.assertAlmostEqual(min(window), 250.0, delta=6.0)
+        self.assertAlmostEqual(max(window), 268.0, delta=6.0)
+
+    def test_the_closure_picks_a_negligible_frozen_term(self):
+        """f is an output here, and it comes out near zero, not assumed so."""
+        sweep = self.sweep(tilt_deg=15.65)
+        coldest = sweep[-1]
+        ceiling = (coldest['blocked_weight']
+                   * bpd.frustrated_quench_kBT(coldest['temperature_K'], 6))
+        self.assertGreater(ceiling, 2.0)
+        self.assertLess(coldest['frozen_kBT'], 0.10)
+        self.assertLess(coldest['frozen_kBT'] / ceiling, 0.05)
+
+    def test_a_deeper_quench_runs_the_feedback_away(self):
+        """More aggregation -> more freezing in place -> more aggregation.
+
+        Past about 17 degrees of tilt the loop no longer closes on a window:
+        the dense phase never redissolves within the swept range.
+        """
+        window = [r['temperature_K'] for r in self.sweep(tilt_deg=18.5)
+                  if r['two_phase']]
+        self.assertTrue(window)
+        self.assertEqual(min(window), 200.0)        # open at the cold end
+        coldest = self.sweep(tilt_deg=18.5)[-1]
+        ceiling = (coldest['blocked_weight']
+                   * bpd.frustrated_quench_kBT(coldest['temperature_K'], 6))
+        self.assertGreater(coldest['frozen_kBT'] / ceiling, 0.5)
+
+    def test_the_explicit_march_is_step_size_converged(self):
+        coarse = bpd.self_consistent_cooling(self.energies, tilt_deg=15.65,
+                                             step_K=4.0)
+        fine = bpd.self_consistent_cooling(self.energies, tilt_deg=15.65,
+                                           step_K=2.0)
+        self.assertAlmostEqual(coarse[-1]['frozen_kBT'],
+                               fine[-1]['frozen_kBT'], delta=0.005)
+        self.assertAlmostEqual(max(r['aggregated_fraction'] for r in coarse),
+                               max(r['aggregated_fraction'] for r in fine),
+                               delta=0.02)
+
+
+class CoolingTableTests(unittest.TestCase):
+    """The plotted columns must be the trajectory, not a re-derivation."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.table = bpd.cooling_energy_table(bpd.pair_energies('converged'),
+                                             step_K=5.0)
+
+    def test_the_plotted_total_is_the_two_attractions(self):
+        rebuilt = -(-self.table['vdw_kBT'] + self.table['annealed_kBT']
+                    + self.table['frozen_kBT'])
+        self.assertTrue(np.allclose(self.table['total_self'], rebuilt,
+                                    atol=1e-12))
+
+    def test_the_threshold_carries_the_registration_constant(self):
+        """Moving a T-independent constant between eps and the level is free."""
+        net = self.table['threshold_sum_kBT'] - self.table['registration_kBT']
+        self.assertAlmostEqual(net, 2.85, delta=0.15)
+
+    def test_the_window_is_where_the_lever_rule_says(self):
+        cold, warm = self.table['window']
+        inside = self.table['aggregated_fraction'] > 0.0
+        self.assertEqual(float(self.table['temperature_K'][inside].min()), cold)
+        self.assertEqual(float(self.table['temperature_K'][inside].max()), warm)
+        self.assertTrue(np.all(self.table['aggregated_fraction'][~inside] == 0.0))
+
+
 if __name__ == '__main__':
     unittest.main()
