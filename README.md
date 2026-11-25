@@ -5,13 +5,84 @@ hexane) supporting the in situ SAXS/WAXS study of temperature- and
 field-driven assembly. The code and outputs live under
 `versions/V10_multiphysics_nanocube/`.
 
-**For the zero-field, temperature-dependent SAXS experiment the current model
-is the self-consistent blocked-dipole condensation model in
-`code/binodal_phase_diagram.py`.** It supersedes the face-to-face versus
-tip-to-tip pair-energy crossover used in earlier drafts of SI Section S8; the
-earlier models are kept below for reference.
+**SI Section S8 (Figure 2D) uses the simplest model, in
+`code/simple_face_tip_model.py`: the energies of two cubes in the
+face-to-face and tip-to-tip configurations on cooling, with continuous dipole
+freezing.** The blocked-dipole condensation model and the other earlier models
+are kept below for reference.
 
-## Current model: blocked-dipole condensation
+## Current model (SI Section S8): face-to-face vs tip-to-tip pair energies
+
+Two 16 nm Fe3O4 nanocubes with a 3.0 nm surface gap, in two configurations:
+face-to-face (centres along <100>, 19.0 nm apart) and tip-to-tip (centres
+along <111>, 28.52 nm apart, rounded corners).
+
+- Above the blocking temperature the moments flip among the eight <111> easy
+  axes within the observation time. The eight vectors sum to zero, so the
+  time-averaged dipolar energy is zero and face-to-face, held by van der
+  Waals attraction alone, has the lower energy.
+- A blocked moment is fixed to the crystal axes, and Brownian rotation
+  (microseconds) can bring two blocked moments head to tail. For <111>
+  moments that is the tip-to-tip configuration,
+  E_dd = -2 mu0 mu^2 / (4 pi r^3). In the face-to-face configuration two
+  parallel <111> moments make the magic angle (54.7 deg) with the <100>
+  line of centres, so E_dd = 0 whether blocked or flipping.
+- Freezing is continuous. The blocked fraction after the observation time is
+  the Neel survival probability b(T) = exp(-t / tau_N), with
+  tau_N = tau0 exp(dE / kBT) and dE = kB T_B ln(t_ZFC / tau0). With
+  t = t_ZFC = 100 s, b(T_B) = 1/e and there is no new parameter.
+
+```text
+E_face(T) = E_vdW,face
+E_tip(T)  = E_vdW,tip + b(T)^2 E_dd,tip
+```
+
+b^2 is the probability that both moments of the tip pair are blocked. The van
+der Waals energy is the Hamaker integral over two aligned cubes, reduced to
+three dimensions with the cube autocorrelation and converged on graded
+Gauss-Legendre panels (`geometry_model.py` is only read).
+
+### Inputs and results
+
+| Quantity | Value |
+|---|---|
+| Ms, mu | 2.85e5 A/m, 1.17e-18 A m^2 |
+| T_B, t_ZFC, tau0 | 250 K, 100 s, 0.98 ns |
+| Barrier dE | 8.75e-20 J |
+| Hamaker constant | 2.0e-20 J |
+| E_vdW face / tip | -9.20e-21 J / -3.72e-22 J |
+| E_dd tip (both blocked) | -1.18e-20 J |
+| b at 260 / 250 / 240 / 230 K | 0.07 / 0.37 / 0.71 / 0.90 |
+| Face / tip at 300 K | -2.22 / -0.09 kBT |
+| Face / tip at 250 K | -2.66 / -0.57 kBT |
+| Face / tip at 200 K | -3.33 / -4.38 kBT |
+| Crossover | 232 K (247 K for t = 20 s) |
+
+These are pair energies, not free energies. The model omits the Boltzmann
+weighting of fluctuating moments, the size distribution, ligand
+rearrangement, entropy, concentration and many-particle coordination, and it
+assumes the two blocked moments of a face pair are parallel (a non-parallel
+face pair could reach -2.65e-20 J).
+
+### Run it
+
+```powershell
+Set-Location versions/V10_multiphysics_nanocube/code
+python simple_face_tip_model.py
+```
+
+It takes about 15 s and writes `versions/V10_multiphysics_nanocube/outputs/simple_face_tip_model/`:
+
+- `face_tip_pair_energy_insets.png/.pdf` - Figure 2D: the two energy curves
+  with the two configurations drawn in (dashed double arrows along the four
+  body diagonals for flipping moments, solid head-to-tail arrows for blocked
+  ones)
+- `face_tip_pair_energy.png/.pdf` - the same without insets
+- `face_tip_configurations.png/.pdf` - the two configurations alone
+- `face_tip_pair_energy.csv` - energies and blocked fraction every 1 K (curves computed every 0.1 K)
+- `summary.json` - inputs, energies, crossover and its sensitivity
+
+## Previous model: blocked-dipole condensation (not used in the SI)
 
 ### What it explains
 
@@ -184,12 +255,14 @@ is 144 tests.
 ```text
 versions/V10_multiphysics_nanocube/
 ├── code/
-│   ├── binodal_phase_diagram.py              current temperature model
+│   ├── simple_face_tip_model.py              current temperature model (SI S8)
+│   ├── binodal_phase_diagram.py              previous temperature model
 │   ├── test_binodal_phase_diagram.py
 │   ├── configuration_averaged_assembly.py    192-state populations, Neel quadrature
 │   ├── geometry_model.py                     geometry, dipolar and vdW kernels
 │   └── ...                                   earlier models, see below
 └── outputs/
+    ├── simple_face_tip_model/
     ├── binodal_phase_diagram/
     └── ...
 ```
